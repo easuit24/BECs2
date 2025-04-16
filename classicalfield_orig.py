@@ -9,7 +9,7 @@ from gpeboxclean_orig import GPETimeEv as gpeb
 
 
 class FiniteTempGPE():
-    def __init__(self, L = 50, npoints = 2**9, dim = 2, numImagSteps = 500, numRealSteps = 1000, T = 0, Nsamples = 10, winMult = 2, dtcoef = 0.05, vortex = False, Tfact = 1/50, imp = False, impPsi = None, runAnim = False, animFileName = None, dst = True): 
+    def __init__(self, L = 50, npoints = 2**9, dim = 2, numImagSteps = 500, numRealSteps = 1000, T = 0, boxthickness = 2, Nsamples = 10, winMult = 2, dtcoef = 0.05, vortex = False, Tfact = 1/50, imp = False, impPsi = None, runAnim = False, animFileName = None, dst = True): 
         self.L = L 
         self.winMult = winMult
         self.winL = self.L*self.winMult
@@ -22,6 +22,8 @@ class FiniteTempGPE():
         self.Tfact = Tfact
         self.T = None 
         self.dtcoef = dtcoef
+
+        self.boxthickness = boxthickness 
     
         self.Nsamples = Nsamples # number of classical noise distributions to generate 
 
@@ -126,7 +128,7 @@ class FiniteTempGPE():
             self.gpeobj = gpev(L = self.L, npoints = self.npoints_input, dtcoef = self.dtcoef, dim = self.dim, numImagSteps=self.numImagSteps, runDyn = False, winMult=self.winMult)
         else: 
 
-            self.gpeobj = gpeb(L = self.L, npoints = self.npoints_input, dtcoef = self.dtcoef, dim = self.dim, numImagSteps=self.numImagSteps, runDyn = False, winMult=self.winMult)
+            self.gpeobj = gpeb(L = self.L, npoints = self.npoints_input, boxthickness= self.boxthickness, dtcoef = self.dtcoef, dim = self.dim, numImagSteps=self.numImagSteps, runDyn = False, winMult=self.winMult)
         self.gs = self.gpeobj.psi 
 
  
@@ -252,7 +254,7 @@ class FiniteTempGPE():
                 snapshots.append(dynpsi)
                 self.time_tracking.append(self.gpeobj.dt * i)
 
-        snapshots = np.array(snapshots)
+        snapshots = np.array(snapshots, dtype = np.complex64)
 
 
         return snapshots, dynpsi
@@ -265,11 +267,14 @@ class FiniteTempGPE():
             self.getNoise()
         #self.getNoise()
         #self.snaps = np.array((self.Nsamples, len(self.wf_samples[0]),len(self.wf_samples[0])))
-        self.final_psis = np.zeros((self.Nsamples, len(self.wf_samples[0]),len(self.wf_samples[0])), dtype = np.complex_)
+        self.final_psis = np.zeros((self.Nsamples, len(self.wf_samples[0]),len(self.wf_samples[0])), dtype = np.complex64)
         self.init_psis = self.wf_samples
         self.short_wfk = []
         for i in range(len(self.wf_samples)): 
-            res = self.realpropagate(self.wf_samples[i], numSteps)
+            if not self.vortex: 
+                res = self.realpropagate(self.wf_samples[i], numSteps)
+            else: 
+                res = self.gpeobj.simulatevortex() 
             self.snaps = res[0] 
             self.final_psis[i] = res[1]
             
