@@ -317,7 +317,7 @@ class FiniteTempGPE():
 
     def animatepsi2d(self, filename):
         if filename != None: 
-            path = fr"C:\Users\TQC User\Desktop\BECs\{filename}.mp4"
+            path = fr"C:\Users\TQC User\Desktop\BECs2\{filename}.mp4"
 
         fig, ax = plt.subplots() 
         data = plt.imshow(np.abs(self.snaps[0])**2, extent = [-self.winL/2, self.winL/2, -self.winL/2, self.winL/2],cmap = plt.cm.hot)
