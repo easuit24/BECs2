@@ -271,10 +271,11 @@ class FiniteTempGPE():
         self.init_psis = self.wf_samples
         self.short_wfk = []
         for i in range(len(self.wf_samples)): 
-            if not self.vortex: 
+            #if not self.vortex: 
+            if True: 
                 res = self.realpropagate(self.wf_samples[i], numSteps)
             else: 
-                res = self.gpeobj.simulatevortex() 
+                vsim = gpev(L = self.L, npoints = self.npoints_input, dtcoef = self.dtcoef, dim = self.dim, numImagSteps=self.numImagSteps, winMult=self.winMult, numRealSteps = self.numRealSteps)
             self.snaps = res[0] 
             self.final_psis[i] = res[1]
             

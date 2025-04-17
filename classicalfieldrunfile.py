@@ -94,6 +94,13 @@ parser.add_argument(
     help = 'Number of points along axis',
     type = int
 )
+parser.add_argument(
+    '-bt',
+    '--boxthickness',
+    default = 3, 
+    help = 'Thickness of the potential wall i.e. how gradual the incline is',
+    type = float
+)
 args = parser.parse_args() 
 print(args)
 numImag = args.numImag 
@@ -104,6 +111,7 @@ vortex = args.vortex
 Tfact = args.Tfact 
 imp = args.imp
 npoints = args.numpoints
+boxthickness = args.boxthickness 
 winMult = args.winMult 
 if imp:
     filename = args.impPsi 
@@ -120,7 +128,7 @@ else:
 
 t0 = time.time() 
 
-g = gpe(npoints = npoints, numImagSteps=numImag, numRealSteps = numReal, winMult = winMult, dtcoef = dtcoef, Nsamples=Nsamples, vortex = vortex, Tfact =Tfact, imp = imp, impPsi = impPsi, runAnim = runAnim, animFileName = animName, dst = False) 
+g = gpe(npoints = npoints, numImagSteps=numImag, numRealSteps = numReal, boxthickness=boxthickness, winMult = winMult, dtcoef = dtcoef, Nsamples=Nsamples, vortex = vortex, Tfact =Tfact, imp = imp, impPsi = impPsi, runAnim = runAnim, animFileName = animName, dst = False) 
 print("Total Run Time: ", time.time() - t0)
 if runAnim: 
     
@@ -131,7 +139,7 @@ if runAnim:
     plt.ylabel('Wavefunction Density')
     plt.title('Slice of Position Wavefunction Density with Vortices')
     plt.legend() 
-    plt.savefig(f'{animName}_dens_distribution')
+    plt.savefig(f'{animName}_dens_distribution.png')
     plt.show()
 
 
@@ -153,11 +161,11 @@ if runAnim:
     plt.ylabel('Momentum Density')
     plt.title('Slice of Momentum Wavefunction Density with Vortices')
     plt.legend() 
-    plt.savefig(f'{animName}_momentum_distribution')
+    plt.savefig(f'{animName}_momentum_distribution.png')
     plt.show() 
-    np.savetxt(animName, np.reshape(g.snaps, -1))
-    np.savetxt('grid', grid)
-    np.savetxt('init_k', avg_initk)
-    np.savetxt('final_k', avg_finalk)
+    #np.savetxt(animName, np.reshape(g.snaps, -1))
+    np.savetxt('grid.csv', grid)
+    np.savetxt('init_k.csv', avg_initk)
+    np.savetxt('final_k.csv', avg_finalk)
 
 
