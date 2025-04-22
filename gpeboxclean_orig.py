@@ -147,7 +147,7 @@ class GPETimeEv():
         #shape=(100, 100), L=40, height=1, thickness=1
         shape = np.shape(self.xi[0])
         L = self.L/self.dx 
-        height = self.kmax**2/2*1.3
+        height = self.kmax**2/2*1.5
         thickness = self.thickness 
 
         x = np.linspace(-shape[0]//2, shape[0]//2, shape[0])
@@ -593,7 +593,7 @@ class GPETimeEv():
             self.dynpsi = np.sqrt(self.Natoms/norm) * psinew
              
 
-            if (i%250 == 0):
+            if (i%1000 == 0):
             
                 self.snapshots.append(self.dynpsi)
                 if self.spawnType != 'No': 
