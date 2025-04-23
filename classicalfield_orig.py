@@ -9,7 +9,7 @@ from gpeboxclean_orig import GPETimeEv as gpeb
 
 
 class FiniteTempGPE():
-    def __init__(self, L = 50, npoints = 2**9, dim = 2, numImagSteps = 500, numRealSteps = 1000, T = 0, boxthickness = 2, Nsamples = 10, winMult = 2, dtcoef = 0.05, vortex = False, Tfact = 1/50, imp = False, impPsi = None, runAnim = False, animFileName = None, dst = True): 
+    def __init__(self, L = 50, npoints = 2**9, dim = 2, numImagSteps = 500, numRealSteps = 1000, T = 0, boxthickness = 2, Nsamples = 10, winMult = 2, dtcoef = 0.05, vortex = False, antiV = False, Tfact = 1/50, imp = False, impPsi = None, runAnim = False, animFileName = None, dst = True): 
         self.L = L 
         self.winMult = winMult
         self.winL = self.L*self.winMult
@@ -28,6 +28,7 @@ class FiniteTempGPE():
         self.Nsamples = Nsamples # number of classical noise distributions to generate 
 
         self.vortex = vortex 
+        self.antiV = antiV
 
         self.gpeobj = None
         self.gs = None 
@@ -67,8 +68,10 @@ class FiniteTempGPE():
         self.animFileName = animFileName 
 
         if self.runAnim: 
-           
-            self.animatepsi2d(self.animFileName) 
+            if not self.vortex: 
+                self.animatepsi2d(self.animFileName) 
+            else: 
+                self.animatepsi2d_vortex(self.animFileName)
 
         # generate the wavefunctions for the propagation 
         # self.genNoiseSamples()
@@ -125,19 +128,106 @@ class FiniteTempGPE():
         exists along the same x-axis. 
         '''
         if self.vortex: 
-            self.gpeobj = gpev(L = self.L, npoints = self.npoints_input, dtcoef = self.dtcoef, dim = self.dim, numImagSteps=self.numImagSteps, runDyn = False, winMult=self.winMult)
+            self.gpeobj = gpev(L = self.L, npoints = self.npoints_input, dtcoef = self.dtcoef, dim = self.dim, numImagSteps=self.numImagSteps, antiV=self.antiV, runDyn = False, winMult=self.winMult)
         else: 
 
             self.gpeobj = gpeb(L = self.L, npoints = self.npoints_input, boxthickness= self.boxthickness, dtcoef = self.dtcoef, dim = self.dim, numImagSteps=self.numImagSteps, runDyn = False, winMult=self.winMult)
         self.gs = self.gpeobj.psi 
+    
+    ## TODO incorporate this into the class object with self. etc. 
+    def cluster_vortices(self, vortex_positions, threshold = 1):
+        '''
+        
+        '''
+        if len(vortex_positions) == 0: 
+            return [] 
+        pos_array = np.array(vortex_positions) 
+        clusters = [] 
+
+        used_ind = set() 
+
+        for i, pos in enumerate(pos_array): 
+            if i in used_ind: 
+                continue 
+            cluster = [pos] 
+            used_ind.add(i) 
+        
+
+            for j, other_pos in enumerate(pos_array): 
+            
+                if j in used_ind: 
+                    continue 
+                if (np.abs(pos[0] - other_pos[0])**2 + np.abs(pos[1] - other_pos[1])**2) < threshold:
+                    cluster.append(other_pos) 
+                    used_ind.add(j) 
+
+
+            cluster_mean = np.mean(cluster, axis = 0) 
+            clusters.append(tuple(cluster_mean))
+        return clusters  
 
  
 
-    # def assemble(self): 
-    #     self.wf = self.gs + self.psinoise 
+    def detect_vortices(self, psi, dx, L, previous_vortices=None, margin=10):
+        '''
+        Detect vortex positions by checking for 2π phase windings around plaquettes.
+        Searches only within a region of interest around previous vortices.
 
+        Parameters:
+        psi - complex wavefunction (2D array)
+        dx - grid spacing
+        L - box length
+        previous_vortices - list of (x, y) vortex positions in physical coordinates
+        margin - number of grid points around previous vortex region to include
 
-    # Generate an ensemble of psi noise wavefunctions to use in an average 
+        Returns:
+        vortex_positions - list of (x, y) tuples in physical coordinates
+        '''
+        psi = psi[int(L/2/dx):int(3*L/2/dx), int(L/2/dx):int(3*L/2/dx)] # keep the box only within the potential walls 
+        Ny, Nx = psi.shape
+        phase = np.angle(psi)
+        vortex_positions = []
+
+        # Convert physical positions to indices
+        if previous_vortices is None or len(previous_vortices) == 0:
+            # Search the entire domain if no previous positions are given
+            i_min, i_max = 1, Ny - 2
+            j_min, j_max = 1, Nx - 2
+        else:
+            i_indices = []
+            j_indices = []
+            for x, y in previous_vortices:
+                j_indices.append(int(x / dx))
+                i_indices.append(int(y / dx))
+
+            i_min = max(1, min(i_indices) - margin)
+            i_max = min(Ny - 2, max(i_indices) + margin)
+            j_min = max(1, min(j_indices) - margin)
+            j_max = min(Nx - 2, max(j_indices) + margin)
+
+        # Main vortex detection loop
+        for i in range(i_min, i_max):
+            for j in range(j_min, j_max):
+                phi = [phase[i, j], phase[i, j+1], phase[i+1, j+1], phase[i+1, j]]
+                dphi = np.diff(phi + [phi[0]])
+                dphi = np.mod(dphi + np.pi, 2 * np.pi) - np.pi
+                winding_number = np.sum(dphi) / (2 * np.pi)
+
+                psi_dens = np.abs(psi)**2
+                threshold = 0.0 # Adjust if needed
+                
+                if np.abs(winding_number) > 0.95 and np.min([psi_dens[i,j], psi_dens[i,j+1], psi_dens[i+1,j], psi_dens[i+1,j+1]]) > threshold:
+                    #print([psi_dens[i,j], psi_dens[i,j+1], psi_dens[i+1,j], psi_dens[i+1,j+1]])
+                    x = (j + 0.5) * dx
+                    y = (i + 0.5) * dx
+                    vortex_positions.append((x, y))
+        # vortex_positions can become the next previous_vortices 
+        #pos_arr = np.array(vortex_positions)
+
+        clustered_positions = self.cluster_vortices(vortex_positions, threshold = 7*dx)
+        #return vortex_positions
+        return clustered_positions
+
 
     def dst2d(self, wfk): 
         wfx_row = np.apply_along_axis(dst, axis = 1, arr = wfk, type = 2) 
@@ -272,17 +362,27 @@ class FiniteTempGPE():
         self.short_wfk = []
         for i in range(len(self.wf_samples)): 
             #if not self.vortex: 
-            if True: 
-                res = self.realpropagate(self.wf_samples[i], numSteps)
-            else: 
-                vsim = gpev(L = self.L, npoints = self.npoints_input, dtcoef = self.dtcoef, dim = self.dim, numImagSteps=self.numImagSteps, winMult=self.winMult, numRealSteps = self.numRealSteps)
+            
+            res = self.realpropagate(self.wf_samples[i], numSteps) 
+
             self.snaps = res[0] 
             self.final_psis[i] = res[1]
+            print(np.shape(self.snaps))
+            print(np.shape(self.final_psis))
+            # for vortex tracking 
             
-            #self.gpeobj.simulatevortex()
-
             self.xgrid_short, self.psix_short, self.kgrid_short, self.psik_short = self.extractBox(self.xi, self.final_psis[i])
             self.short_wfk.append(self.psik_short)
+
+            if self.vortex: 
+                prev_pos = None 
+                vortex_positions = []
+                for j in range(len(self.snaps)): 
+                    vortex_pos = self.detect_vortices(self.snaps[j], self.dx, self.L, prev_pos)
+                    prev_pos = vortex_pos  
+                    vortex_positions.append(np.array([vortex_pos[0][0], vortex_pos[0][1], vortex_pos[1][0], vortex_pos[1][1]])) 
+
+                self.vortex_positions = np.array(vortex_positions)
 
         self.short_wfk = np.array(self.short_wfk)
         self.findAvgs()
@@ -327,6 +427,10 @@ class FiniteTempGPE():
 
         fig, ax = plt.subplots() 
         data = plt.imshow(np.abs(self.snaps[0])**2, extent = [-self.winL/2, self.winL/2, -self.winL/2, self.winL/2],cmap = plt.cm.hot)
+        # v1,v2 = None 
+        # if self.vortex: 
+        #     v1 = plt.scatter(self.vortex_positions[0][0]/self.dx+self.winL//4, self.vortex_positions[0][1]/self.dx+self.winL//4, color = 'blue', marker = '<', s = 20, alpha = 0.3)
+        #     v2 = plt.scatter(self.vortex_positions[0][2]/self.dx+self.winL//4, self.vortex_positions[0][3]/self.dx+self.winL//4, color = 'blue', marker = '>', s = 20, alpha = 0.3)
         
         time_text = ax.text(0.05, 0.95,'',horizontalalignment='left',verticalalignment='top', transform=ax.transAxes,  bbox=dict(facecolor='red', alpha=0.5))
         time_text.set_text('time = 0')
@@ -341,9 +445,14 @@ class FiniteTempGPE():
 
         def animate(i): 
             data.set_data(np.abs(self.snaps[i])**2)
+            # fix these: 
+            # if self.vortex: 
+            #     v1.set_offsets([self.vortex_positions[i][0]/self.dx+self.winL//4, self.vortex_positions[i][1]/self.dx+self.winL//4])
+            #     v2.set_offsets([self.vortex_positions[i][2]/self.dx+self.winL//4, self.vortex_positions[i][3]/self.dx+self.winL//4])
 
             time_text.set_text('time = %.1d' % self.time_tracking[i])
             return data, time_text
+            #return data, time_text, v1, v2 
         anim = animation.FuncAnimation(fig, animate, frames = len(self.snaps), blit = True)
 
         plt.show() 
@@ -352,7 +461,44 @@ class FiniteTempGPE():
 
         return anim
         
+    def animatepsi2d_vortex(self, filename):
+        if filename != None: 
+            path = fr"C:\Users\TQC User\Desktop\BECs2\{filename}.mp4"
 
+        fig, ax = plt.subplots() 
+        data = plt.imshow(np.abs(self.snaps[0])**2, extent = [-self.winL/2, self.winL/2, -self.winL/2, self.winL/2],cmap = plt.cm.hot)
+
+        if self.vortex: 
+            v1 = plt.scatter(self.xi[0][0][int(self.vortex_positions[0][0]/self.dx + self.winL/4/self.dx)], self.xi[0][0][int(self.vortex_positions[0][1]/self.dx + self.winL/4/self.dx)], color = 'blue', marker = '<', s = 20, alpha = 0.3)
+            v2 = plt.scatter(self.xi[0][0][int(self.vortex_positions[0][2]/self.dx + self.winL/4/self.dx)], self.xi[0][0][int(self.vortex_positions[0][3]/self.dx + self.winL/4/self.dx)], color = 'blue', marker = '>', s = 20, alpha = 0.3)
+        
+        time_text = ax.text(0.05, 0.95,'',horizontalalignment='left',verticalalignment='top', transform=ax.transAxes,  bbox=dict(facecolor='red', alpha=0.5))
+        time_text.set_text('time = 0')
+
+        plt.xlabel("x", fontsize = 16)
+        plt.ylabel('y', fontsize = 16)
+        
+        # plt.contour(self.xi[0], self.xi[1], self.Vs)
+        
+        plt.title(f'Animation for L={self.L}')
+        fig.colorbar(data)
+
+        def animate(i): 
+            data.set_data(np.abs(self.snaps[i])**2)
+            # fix these: 
+            if self.vortex: 
+                v1.set_offsets([self.xi[0][0][int(self.vortex_positions[i][0]/self.dx + self.winL/4/self.dx)], self.xi[0][0][int(self.vortex_positions[i][1]/self.dx + self.winL/4/self.dx)]])
+                v2.set_offsets([self.xi[0][0][int(self.vortex_positions[i][2]/self.dx + self.winL/4/self.dx)], self.xi[0][0][int(self.vortex_positions[i][3]/self.dx + self.winL/4/self.dx)]])
+            time_text.set_text('time = %.1d' % self.time_tracking[i])
+            #return data, time_text
+            return data, time_text, v1, v2
+        anim = animation.FuncAnimation(fig, animate, frames = len(self.snaps), blit = True)
+
+        plt.show() 
+        
+        anim.save(path)
+
+        return anim
 
     
 
