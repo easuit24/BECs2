@@ -380,7 +380,15 @@ class FiniteTempGPE():
                 for j in range(len(self.snaps)): 
                     vortex_pos = self.detect_vortices(self.snaps[j], self.dx, self.L, prev_pos)
                     prev_pos = vortex_pos  
-                    vortex_positions.append(np.array([vortex_pos[0][0], vortex_pos[0][1], vortex_pos[1][0], vortex_pos[1][1]])) 
+                    if len(prev_pos) == 2: 
+                        vortex_positions.append(np.array([vortex_pos[0][0], vortex_pos[0][1], vortex_pos[1][0], vortex_pos[1][1]])) 
+                    elif len(prev_pos) ==1:
+                        vortex_positions.append(np.array([vortex_pos[0][0], vortex_pos[0][1], np.nan, np.nan]))
+                        print("less than 2 vortices")
+                    elif len(prev_pos) > 2: 
+                        print('more than 2 vortices')
+                    elif len(prev_pos) == 0: 
+                        print('no vortices found')
 
                 self.vortex_positions = np.array(vortex_positions)
 
@@ -466,11 +474,11 @@ class FiniteTempGPE():
             path = fr"C:\Users\TQC User\Desktop\BECs2\{filename}.mp4"
 
         fig, ax = plt.subplots() 
-        data = plt.imshow(np.abs(self.snaps[0])**2, extent = [-self.winL/2, self.winL/2, -self.winL/2, self.winL/2],cmap = plt.cm.hot)
+        data = plt.imshow(np.abs(self.snaps[0])**2, extent = [-self.winL/2, self.winL/2, -self.winL/2, self.winL/2],cmap = plt.cm.hot, origin = 'lower')
 
         if self.vortex: 
-            v1 = plt.scatter(self.xi[0][0][int(self.vortex_positions[0][0]/self.dx + self.winL/4/self.dx)], self.xi[0][0][int(self.vortex_positions[0][1]/self.dx + self.winL/4/self.dx)], color = 'blue', marker = '<', s = 20, alpha = 0.3)
-            v2 = plt.scatter(self.xi[0][0][int(self.vortex_positions[0][2]/self.dx + self.winL/4/self.dx)], self.xi[0][0][int(self.vortex_positions[0][3]/self.dx + self.winL/4/self.dx)], color = 'blue', marker = '>', s = 20, alpha = 0.3)
+            v1 = plt.scatter(self.xi[0][0][int((self.vortex_positions[0][0]+1)/self.dx+self.winL/4/self.dx)], self.xi[0][0][int((self.vortex_positions[0][1]+1)/self.dx+self.winL/4/self.dx)], color = 'blue', marker = '<', s = 20, alpha = 0.6)
+            v2 = plt.scatter(self.xi[0][0][int((self.vortex_positions[0][2]+1)/self.dx+self.winL/4/self.dx)], self.xi[0][0][int((self.vortex_positions[0][3]+1)/self.dx+self.winL/4/self.dx)], color = 'blue', marker = '>', s = 20, alpha = 0.6)
         
         time_text = ax.text(0.05, 0.95,'',horizontalalignment='left',verticalalignment='top', transform=ax.transAxes,  bbox=dict(facecolor='red', alpha=0.5))
         time_text.set_text('time = 0')
@@ -487,8 +495,8 @@ class FiniteTempGPE():
             data.set_data(np.abs(self.snaps[i])**2)
             # fix these: 
             if self.vortex: 
-                v1.set_offsets([self.xi[0][0][int(self.vortex_positions[i][0]/self.dx + self.winL/4/self.dx)], self.xi[0][0][int(self.vortex_positions[i][1]/self.dx + self.winL/4/self.dx)]])
-                v2.set_offsets([self.xi[0][0][int(self.vortex_positions[i][2]/self.dx + self.winL/4/self.dx)], self.xi[0][0][int(self.vortex_positions[i][3]/self.dx + self.winL/4/self.dx)]])
+                v1.set_offsets([self.xi[0][0][int((self.vortex_positions[i][0]+1)/self.dx+self.winL/4/self.dx)], self.xi[0][0][int((self.vortex_positions[i][1]+1)/self.dx+self.winL/4/self.dx)]])
+                v2.set_offsets([self.xi[0][0][int((self.vortex_positions[i][2]+1)/self.dx+self.winL/4/self.dx)], self.xi[0][0][int((self.vortex_positions[i][3]+1)/self.dx+self.winL/4/self.dx)]])
             time_text.set_text('time = %.1d' % self.time_tracking[i])
             #return data, time_text
             return data, time_text, v1, v2
