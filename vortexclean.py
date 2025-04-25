@@ -11,7 +11,7 @@ import os
 
 class GPETimeEv():
  
-    def __init__(self, L = 20, dtcoef = 0.1, npoints = 2**9, dim = 1, winMult = 2, numVort = 10, spawnType = 'pair', tol = 10e-10, Nfactor = 1000, numImagSteps = 2000, numRealSteps = 1000,  antiV = False, dist = 3, runDyn = True, imp = False, impPsi = None): 
+    def __init__(self, L = 20, dtcoef = 0.1, npoints = 2**9, dim = 1, winMult = 2, numVort = 10, boxthickness = 2, spawnType = 'pair', tol = 10e-10, Nfactor = 1000, numImagSteps = 2000, numRealSteps = 1000,  antiV = False, dist = 3, runDyn = True, imp = False, impPsi = None): 
         
         # Simulation parameters 
         self.L = L 
@@ -53,6 +53,7 @@ class GPETimeEv():
         self.dtcoef = dtcoef 
         self.dt = self.dtcoef*(self.dx**2) # coef was originally 0.1
         
+        self.thickness = boxthickness
         self.Vbox = self.setbox() 
 
         # Evolution parameters 
@@ -124,7 +125,7 @@ class GPETimeEv():
         self.kmax = np.pi/self.dx
         
         
-    def setbox(self):
+    def setbox2(self):
         '''
         Set up the potential energy box to contain the wavefunction assuming a box potential  
         '''
@@ -137,6 +138,36 @@ class GPETimeEv():
 
         V[V<self.tol] = 0.0 # set values close to 0 to be 0
         return V 
+    
+    def setbox(self):
+        #shape=(100, 100), L=40, height=1, thickness=1
+        shape = np.shape(self.xi[0])
+        L = self.L/self.dx 
+        # *2.5 seemed to work pretty ok with some flow out of the box
+        height = self.kmax**2/2*3
+        thickness = self.thickness 
+
+        x = np.linspace(-shape[0]//2, shape[0]//2, shape[0])
+        y = np.linspace(-shape[1]//2, shape[1]//2, shape[1])
+        X, Y = np.meshgrid(x, y, indexing='ij')
+
+        half_L = L / 2
+
+        def edge_strip(coord, center, thickness):
+            return np.exp(-((coord - center) ** 2) / (2 * thickness**2))
+
+        # Create masked edge strips
+        top_edge    = edge_strip(Y,  half_L, thickness) * (np.abs(X) <= half_L)
+        bottom_edge = edge_strip(Y, -half_L, thickness) * (np.abs(X) <= half_L)
+        left_edge   = edge_strip(X, -half_L, thickness) * (np.abs(Y) <= half_L)
+        right_edge  = edge_strip(X,  half_L, thickness) * (np.abs(Y) <= half_L)
+
+
+        # Combine edges using maximum to prevent corner stacking
+        V = height * np.maximum.reduce([top_edge, bottom_edge, left_edge, right_edge])
+
+
+        return V
         
 
     def initpsi(self): 

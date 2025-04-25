@@ -128,7 +128,7 @@ class FiniteTempGPE():
         exists along the same x-axis. 
         '''
         if self.vortex: 
-            self.gpeobj = gpev(L = self.L, npoints = self.npoints_input, dtcoef = self.dtcoef, dim = self.dim, numImagSteps=self.numImagSteps, antiV=self.antiV, runDyn = False, winMult=self.winMult)
+            self.gpeobj = gpev(L = self.L, npoints = self.npoints_input, boxthickness= self.boxthickness, dtcoef = self.dtcoef, dim = self.dim, numImagSteps=self.numImagSteps, antiV=self.antiV, runDyn = False, winMult=self.winMult)
         else: 
 
             self.gpeobj = gpeb(L = self.L, npoints = self.npoints_input, boxthickness= self.boxthickness, dtcoef = self.dtcoef, dim = self.dim, numImagSteps=self.numImagSteps, runDyn = False, winMult=self.winMult)
