@@ -88,12 +88,13 @@ class PointTracker():
     def labelVortices(self): 
         for i in range(1,len(self.psi_snaps)): 
 
-            vortex_positions, anti_vortex_positions = self.detectvortices(self.psi_snaps[i])
+            vortex_positions, anti_vortex_positions = self.detectVortices(self.psi_snaps[i])
             for j in range(len(self.points)): 
                 # match the vortices in this array with the existing vortices in the self.points array 
                 # start with the existing points and see which detected vortex is closest to each of the existing vortices
 
                 # distance between detected points and existing point 
+                # test this! I think this assumes that there are more detected points than existing points - the ADD point case 
                 existing_point = self.points[j] 
                 if existing_point.getVortexType() == True: # then it is a vortex 
                     detected_points = vortex_positions

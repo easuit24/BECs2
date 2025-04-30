@@ -71,7 +71,8 @@ class FiniteTempGPE():
             if not self.vortex: 
                 self.animatepsi2d(self.animFileName) 
             else: 
-                self.animatepsi2d_vortex(self.animFileName)
+                self.animatepsi2d(self.animFileName)
+                #self.animatepsi2d_vortex(self.animFileName)
 
         # generate the wavefunctions for the propagation 
         # self.genNoiseSamples()
@@ -374,23 +375,23 @@ class FiniteTempGPE():
             self.xgrid_short, self.psix_short, self.kgrid_short, self.psik_short = self.extractBox(self.xi, self.final_psis[i])
             self.short_wfk.append(self.psik_short)
 
-            if self.vortex: 
-                prev_pos = None 
-                vortex_positions = []
-                for j in range(len(self.snaps)): 
-                    vortex_pos = self.detect_vortices(self.snaps[j], self.dx, self.L, prev_pos)
-                    prev_pos = vortex_pos  
-                    if len(prev_pos) == 2: 
-                        vortex_positions.append(np.array([vortex_pos[0][0], vortex_pos[0][1], vortex_pos[1][0], vortex_pos[1][1]])) 
-                    elif len(prev_pos) ==1:
-                        vortex_positions.append(np.array([vortex_pos[0][0], vortex_pos[0][1], np.nan, np.nan]))
-                        print("less than 2 vortices")
-                    elif len(prev_pos) > 2: 
-                        print('more than 2 vortices')
-                    elif len(prev_pos) == 0: 
-                        print('no vortices found')
+            # if self.vortex: 
+            #     prev_pos = None 
+            #     vortex_positions = []
+            #     for j in range(len(self.snaps)): 
+            #         vortex_pos = self.detect_vortices(self.snaps[j], self.dx, self.L, prev_pos)
+            #         prev_pos = vortex_pos  
+            #         if len(prev_pos) == 2: 
+            #             vortex_positions.append(np.array([vortex_pos[0][0], vortex_pos[0][1], vortex_pos[1][0], vortex_pos[1][1]])) 
+            #         elif len(prev_pos) ==1:
+            #             vortex_positions.append(np.array([vortex_pos[0][0], vortex_pos[0][1], np.nan, np.nan]))
+            #             print("less than 2 vortices")
+            #         elif len(prev_pos) > 2: 
+            #             print('more than 2 vortices')
+            #         elif len(prev_pos) == 0: 
+            #             print('no vortices found')
 
-                self.vortex_positions = np.array(vortex_positions)
+            #     self.vortex_positions = np.array(vortex_positions)
 
         self.short_wfk = np.array(self.short_wfk)
         self.findAvgs()
