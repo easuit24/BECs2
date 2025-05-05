@@ -61,9 +61,9 @@ class PointTracker():
                 circulation_ij = -dS_y_left[i,j] -dS_x_top[i,j] + dS_y_right[i,j] + dS_x_bottom[i,j] 
 
                 if circulation_ij > 6.2: 
-                    vortex_positions.append([(i+0.5)*self.dx, (j+0.5)*self.dx])
+                    vortex_positions.append([(j+0.5)*self.dx, (i+0.5)*self.dx])
                 elif circulation_ij < -6.2: 
-                    anti_vortex_positions.append([(i+0.5)*self.dx, (j+0.5)*self.dx]) 
+                    anti_vortex_positions.append([(j+0.5)*self.dx, (i+0.5)*self.dx]) 
 
         circulation  = -dS_y_left -dS_x_top + dS_y_right + dS_x_bottom  
         
@@ -86,10 +86,13 @@ class PointTracker():
         self.initGrid()
 
     def labelVortices(self): 
+        print(len(self.psi_snaps))
         for i in range(1,len(self.psi_snaps)): 
-
+            
             vortex_positions, anti_vortex_positions = self.detectVortices(self.psi_snaps[i])
+            print("Outer Loop: ", i)
             for j in range(len(self.points)): 
+                print("Inner Loop: ", i)
                 # match the vortices in this array with the existing vortices in the self.points array 
                 # start with the existing points and see which detected vortex is closest to each of the existing vortices
 
@@ -99,14 +102,16 @@ class PointTracker():
                 if existing_point.getVortexType() == True: # then it is a vortex 
                     detected_points = vortex_positions
                     euclidean_distances = np.abs(existing_point[0] - detected_points[:,0])**2 + np.abs(existing_point[1] - detected_points[:,1])**2
-                    min_index = np.where(np.min(euclidean_distances))
+                    min_index = np.where(euclidean_distances == np.min(euclidean_distances))
                     min_coordinate = vortex_positions[min_index]
                 else: 
                     detected_points = anti_vortex_positions
-                    euclidean_distances = np.abs(existing_point[0] - detected_points[:,0])**2 + np.abs(existing_point[1] - detected_points[:,1])**2
-                    min_index = np.where(np.min(euclidean_distances))
+                    euclidean_distances = np.sqrt(np.abs(existing_point.getCoors()[0] - detected_points[:,0])**2 + np.abs(existing_point.getCoors()[1] - detected_points[:,1])**2)
+                    min_index = np.where(euclidean_distances == np.min(euclidean_distances))
                     min_coordinate = anti_vortex_positions[min_index]
-                existing_point.addCoor(min_coordinate) 
+                existing_point.addCoor(*min_coordinate[0]) 
+                self.points[j] = existing_point 
+                
 
             if len(self.points) < len(vortex_positions) + len(anti_vortex_positions): 
                 # initialize new points that correspond to the new vortices
