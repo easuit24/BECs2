@@ -1,11 +1,13 @@
 import numpy as np
 
 class Point(): 
-    def __init__(self, xcoor, ycoor, vortex, trajectory = []): 
+    def __init__(self, xcoor, ycoor, vortex, trajectory = [], starttime = 0): 
         self.xcoor = xcoor
         self.ycoor = ycoor
         self.vortex = vortex # true if vortex, false if anti-vortex
         self.trajectory = trajectory 
+        self.starttime = starttime 
+        self.endtime = None 
 
     def getCoors(self): 
         return (self.xcoor, self.ycoor) 
@@ -21,11 +23,19 @@ class Point():
         self.ycoor = y
         self.trajectory.append((x,y))
 
+    def endPoint(self, x, y, end): 
+        self.endtime = end
+        self.xcoor = x
+        self.ycoor = y 
+
+
+
 
 
 class PointTracker(): 
     def __init__(self, psi_snaps, dx, L, points = [], border_threshold = 4): 
-        self.points = points # an array of point objects 
+        self.points = points # an array of currently active point objects 
+        self.point_history = points # all points that were active during the simulation
         self.psi_snaps = psi_snaps
         self.dx = dx
         self.L = L 
@@ -85,14 +95,23 @@ class PointTracker():
     def runTracker(self): 
         self.initGrid()
 
-    def labelVortices(self): 
-        print(len(self.psi_snaps))
+    def getAllVortices(self): 
+        vortex_positions_unordered = np.zeros((len(self.psi_snaps), 2)) 
+        antivortex_positions_unordered = np.zeros((len(self.psi_snaps), 2)) 
         for i in range(1,len(self.psi_snaps)): 
             
-            vortex_positions, anti_vortex_positions = self.detectVortices(self.psi_snaps[i])
-            print("Outer Loop: ", i)
+            vortex_positions_unordered[i], antivortex_positions_unordered[i] = self.detectVortices(self.psi_snaps[i]) # all detected vortices present
+
+        return vortex_positions_unordered, antivortex_positions_unordered
+
+    def labelVortices(self): 
+        #print(len(self.psi_snaps))
+        for i in range(1,len(self.psi_snaps)): 
+            
+            vortex_positions, anti_vortex_positions = self.detectVortices(self.psi_snaps[i]) # all detected vortices present 
+            #print("Outer Loop: ", i)
             for j in range(len(self.points)): 
-                print("Inner Loop: ", i)
+                #print("Inner Loop: ", i)
                 # match the vortices in this array with the existing vortices in the self.points array 
                 # start with the existing points and see which detected vortex is closest to each of the existing vortices
 
@@ -115,11 +134,15 @@ class PointTracker():
 
             if len(self.points) < len(vortex_positions) + len(anti_vortex_positions): 
                 # initialize new points that correspond to the new vortices
-                break  
+                print('More detected points')  
 
             elif len(self.points) > len(vortex_positions) + len(anti_vortex_positions): 
                 # end the points that correspond to the unclaimed points 
-                break 
+                print('Fewer detected points') 
+                print(vortex_positions) 
+                print(anti_vortex_positions)
+
+        
                  
 
 
