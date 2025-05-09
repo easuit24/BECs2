@@ -160,8 +160,9 @@ class PointTracker():
                 existing_point.addCoor(*min_coordinate[0]) 
                 self.unorderedpoints[j] = existing_point
 
-    def maintainOrAddVortices(self, vortex_positions, anti_vortex_positions): 
-
+    def maintainOrAddVortices(self, vortex_positions, anti_vortex_positions, snapindex): 
+        all_detected_antivortices = anti_vortex_positions.tolist() 
+        all_detected_vortices = vortex_positions.tolist()
         for j in range(len(self.points)): 
  
             existing_point = self.points[j] 
@@ -189,26 +190,58 @@ class PointTracker():
 
         #all_detected_points = all_detected_vortices + all_detected_antivortices 
         if len(all_detected_vortices) + len(all_detected_antivortices) > 0: 
-            print(i, ": New Vortices Appeared")
-            time = 250*i*self.dt 
+            print(snapindex, ": New Vortices Appeared")
+            time = 250*snapindex*self.dt 
             for i in range(len(all_detected_vortices)): 
                 self.points.append(Point(all_detected_vortices[i][0], all_detected_vortices[i][1], trajectory = [(all_detected_vortices[i][0], all_detected_vortices[i][1])], vortex = True, starttime = time))
             for i in range(len(all_detected_antivortices)): 
                 self.points.append(Point(all_detected_antivortices[i][0], all_detected_antivortices[i][1], trajectory = [(all_detected_antivortices[i][0], all_detected_antivortices[i][1])], vortex = False, starttime = time))
         
 
-    def removeVortices(self, vortex_positions, anti_vortex_positions): 
+    def removeVortices(self, vortex_positions, anti_vortex_positions, snapindex): 
+        existing_coords = np.zeros((len(self.points),2))
+        existing_vortex_coords = [] 
+        existing_antivortex_coords = [] 
+        for i in range(len(self.points)): 
+            if self.points[i].getVortexType() == True: 
+                existing_vortex_coords.append(self.points[i].getCoors())
+            else: 
+                existing_antivortex_coords.append(self.points[i].getCoors()) 
+            existing_coords[i] = self.points[i].getCoors() 
+        removal_candidates = self.points # must remove from self.points and also set the end time for the point via the corresponding function in Point
+        
         for j in range(len(vortex_positions)): # loop over the detected vortices - find the closest vortex match in self.points 
             detected_vortex_coords = vortex_positions[j] 
-            
-            for i in range(len(self.points)): 
-                existing_point_coords = self.points[i].getCoors() 
-                
+            euclidean_distances = np.sqrt(np.abs(np.array(existing_vortex_coords)[:,0] - detected_vortex_coords[0])**2 + np.abs(np.array(existing_vortex_coords)[:,1] - detected_vortex_coords[1])**2)
+            min_index = np.where(euclidean_distances == np.min(euclidean_distances)) 
+            min_coordinate = existing_coords[min_index] # the existing point that is a match for the jth detected vortex
+            existing_vortex_coords = [x for x in existing_vortex_coords if x not in min_coordinate]
 
-        for j in range(len(anti_vortex_positions)): # loop over the detected anti-vortices - find the closest anti-vortex match in self.points 
-            continue  
+        for j in range(len(anti_vortex_positions)): # loop over the detected vortices - find the closest vortex match in self.points 
+            detected_vortex_coords = anti_vortex_positions[j] 
+            #print(existing_antivortex_coords[:,0]) 
+            #print(detected_vortex_coords[0])
+            euclidean_distances = np.sqrt(np.abs(np.array(existing_antivortex_coords)[:,0] - detected_vortex_coords[0])**2 + np.abs(np.array(existing_antivortex_coords)[:,1] - detected_vortex_coords[1])**2)
+            min_index = np.where(euclidean_distances == np.min(euclidean_distances)) 
+            min_coordinate = existing_coords[min_index] # the existing point that is a match for the jth detected vortex
+            existing_antivortex_coords = [x for x in existing_antivortex_coords if x not in min_coordinate]
 
-    def labelVortices2(self): 
+        # the remaining Point(s) should be removed 
+
+        for i in range(len(existing_vortex_coords)): 
+            currtime = 250*snapindex*self.dt
+            index_to_remove = np.where(existing_coords == existing_vortex_coords[i])
+            print(existing_vortex_coords)
+            print(existing_coords)
+            print(np.where(existing_coords == existing_vortex_coords[i]))
+            x,y = self.points[index_to_remove].getCoors()
+            self.points[index_to_remove].endPoint(x,y,currtime)
+            del self.points[index_to_remove]
+
+        
+                 
+
+    def labelVortices(self): 
         for i in range(1,len(self.psi_snaps)): 
             
             vortex_positions, anti_vortex_positions = self.detectVortices(self.psi_snaps[i]) # all detected vortices present 
@@ -216,12 +249,12 @@ class PointTracker():
             all_detected_antivortices = anti_vortex_positions.tolist()  
 
             if len(all_detected_vortices) + len(all_detected_antivortices) >= len(self.points): 
-                self.maintainOrAddVortices(vortex_positions, anti_vortex_positions)
+                self.maintainOrAddVortices(vortex_positions, anti_vortex_positions, i)
             else: 
-                self.removeVortices() 
+                self.removeVortices(vortex_positions, anti_vortex_positions, i) 
 
 
-    def labelVortices(self): 
+    def labelVortices2(self): 
         #print(len(self.psi_snaps))
         for i in range(1,len(self.psi_snaps)): 
             
