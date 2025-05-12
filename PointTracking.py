@@ -53,6 +53,7 @@ class PointTracker():
         self.dt = dt 
         self.border_threshold = border_threshold
         self.circulation = None
+        self.trajectories = []
 
         self.runTracker()
     
@@ -103,6 +104,15 @@ class PointTracker():
         if len(avp) > 0: # initialize for anti-vortex 
             for i in range(len(avp)): 
                 self.points.append(Point(avp[i][0], avp[i][1], trajectory = [(avp[i][0], avp[i][1])], vortex = False))
+
+    def getCurrentCoors(self): 
+        self.trajectories = [] 
+        for i in range(len(self.points)):
+            print(self.points[i])
+
+            if np.isnan(self.points[i]): 
+                self.trajectories.append(self.points[i].getCoors())
+        return self.trajectories 
 
     def runTracker(self): 
         self.initGrid()
@@ -212,6 +222,7 @@ class PointTracker():
         
         for j in range(len(vortex_positions)): # loop over the detected vortices - find the closest vortex match in self.points 
             detected_vortex_coords = vortex_positions[j] 
+            print(existing_vortex_coords)
             euclidean_distances = np.sqrt(np.abs(np.array(existing_vortex_coords)[:,0] - detected_vortex_coords[0])**2 + np.abs(np.array(existing_vortex_coords)[:,1] - detected_vortex_coords[1])**2)
             min_index = np.where(euclidean_distances == np.min(euclidean_distances)) 
             min_coordinate = existing_coords[min_index] # the existing point that is a match for the jth detected vortex
@@ -221,22 +232,32 @@ class PointTracker():
             detected_vortex_coords = anti_vortex_positions[j] 
             #print(existing_antivortex_coords[:,0]) 
             #print(detected_vortex_coords[0])
+            print(existing_antivortex_coords)
             euclidean_distances = np.sqrt(np.abs(np.array(existing_antivortex_coords)[:,0] - detected_vortex_coords[0])**2 + np.abs(np.array(existing_antivortex_coords)[:,1] - detected_vortex_coords[1])**2)
             min_index = np.where(euclidean_distances == np.min(euclidean_distances)) 
             min_coordinate = existing_coords[min_index] # the existing point that is a match for the jth detected vortex
             existing_antivortex_coords = [x for x in existing_antivortex_coords if x not in min_coordinate]
 
         # the remaining Point(s) should be removed 
-
+        
+        # start with vortices: go through the remaining unclaimed vortices in existing_vortex_coords 
+        # compare these with all the coordinates that are currently active in existing_coords - maybe rename this to active coords 
         for i in range(len(existing_vortex_coords)): 
             currtime = 250*snapindex*self.dt
-            index_to_remove = np.where(existing_coords == existing_vortex_coords[i])
-            print(existing_vortex_coords)
-            print(existing_coords)
-            print(np.where(existing_coords == existing_vortex_coords[i]))
-            x,y = self.points[index_to_remove].getCoors()
-            self.points[index_to_remove].endPoint(x,y,currtime)
-            del self.points[index_to_remove]
+            print("Previous Active Points: ", self.getCurrentCoors())
+            #print(np.where(existing_coords[:,0] == existing_vortex_coords[i][0] and existing_coords[:,1] == existing_vortex_coords[i][1]))
+            index_to_remove = np.intersect1d(np.where(existing_coords[:,0] == existing_vortex_coords[i][0]), np.where(existing_coords[:,1] == existing_vortex_coords[i][1]))
+            #index_to_remove = np.where(existing_coords[:,0] == existing_vortex_coords[i][0] and existing_coords[:,1] == existing_vortex_coords[i][1])
+            
+            #print(np.where(existing_coords[0] == existing_vortex_coords[i][0] and existing_coords[1] == existing_vortex_coords[i][1]))
+            print(index_to_remove[0])
+            x,y = self.points[index_to_remove[0]].getCoors()
+            self.points[index_to_remove[0]].endPoint(x,y,currtime)
+            self.points[index_to_remove[0]] = np.nan
+            #del self.points[index_to_remove[0]] # be careful - when you delete index, it shifts the array 
+            # compile a list of indices to remove from the array and then just remove them all after the loop 
+            print("New Active Points: ", self.getCurrentCoors())
+        self.points = [x for x in self.points if str(x) != np.nan]
 
         
                  
