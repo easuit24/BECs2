@@ -149,14 +149,20 @@ class PointTracker():
             # find active point coordinates 
             active_vortex_coors, active_antivortex_coors = self.getVAntiVInfo() # this can be the codebook 
 
-            vortices_closest_index, distances_v = vq(active_vortex_coors, vortex_positions)
-            antivortices_closest_index, distances_av = vq(active_antivortex_coors, anti_vortex_positions)
-
             print("Active Points: ", active_vortex_coors + active_antivortex_coors)
             print("New Detected Vortices: ", vortex_positions)
             print("New Detected AntiVortices: ", anti_vortex_positions)
-            print('Closest Match: ' , vortices_closest_index)
-            print('AntiVortex Closest Match: ', antivortices_closest_index)
+            print("Shape, Vortex positions: ", np.shape(vortex_positions))
+            print("Shape, Vortex Coords: ", np.shape(active_vortex_coors))
+
+            if len(active_vortex_coors) > 0: 
+                vortices_closest_index, distances_v = vq(active_vortex_coors, vortex_positions)
+                print('Closest Match: ' , vortices_closest_index)
+            if len(active_antivortex_coors) > 0 : 
+                antivortices_closest_index, distances_av = vq(active_antivortex_coors, anti_vortex_positions)                    
+                print('AntiVortex Closest Match: ', antivortices_closest_index)
+        
+            print("")
 
 
 
