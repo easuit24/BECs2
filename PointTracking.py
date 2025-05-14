@@ -117,6 +117,50 @@ class PointTracker():
     def runTracker(self): 
         self.initGrid()
 
+
+    def newLabelVortices(self): 
+        #print(len(self.psi_snaps))
+        for i in range(1,len(self.psi_snaps)): 
+            
+            vortex_positions, anti_vortex_positions = self.detectVortices(self.psi_snaps[i]) # all detected vortices present 
+            #all_detected_points = vortex_positions.tolist() + anti_vortex_positions.tolist() 
+            all_detected_vortices = vortex_positions.tolist() 
+            all_detected_antivortices = anti_vortex_positions.tolist() 
+            
+
+            # clause for if the next frame maintains or detects more vortices compared to the previous frame  
+            if len(self.points)<= len(vortex_positions) + len(anti_vortex_positions): 
+                
+                for j in range(len(self.points)): 
+    
+                    existing_point = self.points[j] 
+
+                    if existing_point.getVortexType() == True and len(vortex_positions)>0: # then it is a vortex 
+                        detected_points = vortex_positions
+
+                        euclidean_distances = np.sqrt(np.abs(existing_point.getCoors()[0] - detected_points[:,0])**2 + np.abs(existing_point.getCoors()[1] - detected_points[:,1])**2)
+                        min_index = np.where(euclidean_distances == np.min(euclidean_distances))
+                        min_coordinate = vortex_positions[min_index]
+
+                        all_detected_vortices = [x for x in all_detected_vortices if x not in min_coordinate]
+                    elif existing_point.getVortexType() == False and len(anti_vortex_positions)>0: 
+                        detected_points = anti_vortex_positions
+                        euclidean_distances = np.sqrt(np.abs(existing_point.getCoors()[0] - detected_points[:,0])**2 + np.abs(existing_point.getCoors()[1] - detected_points[:,1])**2)
+                        min_index = np.where(euclidean_distances == np.min(euclidean_distances))
+                        min_coordinate = anti_vortex_positions[min_index]
+                        all_detected_antivortices = [x for x in all_detected_antivortices if x not in min_coordinate]
+
+                # add the "matched" coordinate to the trajectory and update the point in self.points 
+                existing_point.addCoor(*min_coordinate[0])                
+                self.points[j] = existing_point
+
+            # clause for if a(n) (anti)vortex has disappeared and should be removed from tracking 
+            #else: 
+                
+
+
+    
+
     def getAllVortices(self): 
         '''
         Try to just plot the vortices unordered and see if the vortices are being tracked appropriately 
@@ -262,7 +306,7 @@ class PointTracker():
         
                  
 
-    def labelVortices(self): 
+    def labelVortices2(self): 
         for i in range(1,len(self.psi_snaps)): 
             
             vortex_positions, anti_vortex_positions = self.detectVortices(self.psi_snaps[i]) # all detected vortices present 
@@ -275,7 +319,7 @@ class PointTracker():
                 self.removeVortices(vortex_positions, anti_vortex_positions, i) 
 
 
-    def labelVortices2(self): 
+    def labelVortices(self): 
         #print(len(self.psi_snaps))
         for i in range(1,len(self.psi_snaps)): 
             
