@@ -140,7 +140,6 @@ class PointTracker():
         self.initGrid()
 
     def labelVortices(self): 
-
         # loop through each of the frames of the simulation 
         for i in range(1,len(self.psi_snaps)):  
             # find the vortex and anti-vortex positions           
@@ -149,20 +148,55 @@ class PointTracker():
             # find active point coordinates 
             active_vortex_coors, active_antivortex_coors = self.getVAntiVInfo() # this can be the codebook 
 
-            print("Active Points: ", active_vortex_coors + active_antivortex_coors)
-            print("New Detected Vortices: ", vortex_positions)
-            print("New Detected AntiVortices: ", anti_vortex_positions)
-            print("Shape, Vortex positions: ", np.shape(vortex_positions))
-            print("Shape, Vortex Coords: ", np.shape(active_vortex_coors))
+            # print("Active Points: ", active_vortex_coors + active_antivortex_coors)
+            # print("New Detected Vortices: ", vortex_positions)
+            # print("New Detected AntiVortices: ", anti_vortex_positions)
+            # print("Shape, Vortex positions: ", vortex_positions)
+            # print("Shape, Vortex Coords: ", active_vortex_coors)
 
-            if len(active_vortex_coors) > 0: 
+            if len(active_vortex_coors) > 0 and len(vortex_positions)>0: 
                 vortices_closest_index, distances_v = vq(active_vortex_coors, vortex_positions)
-                print('Closest Match: ' , vortices_closest_index)
-            if len(active_antivortex_coors) > 0 : 
-                antivortices_closest_index, distances_av = vq(active_antivortex_coors, anti_vortex_positions)                    
-                print('AntiVortex Closest Match: ', antivortices_closest_index)
-        
+                # merge options where there are multiple of the same index: is this causing the index error issue?? 
+
+
+
+                # for now, assume all unique indices 
+                for i in range(len(active_vortex_coors)): 
+                    index_of_match = vortices_closest_index[i] # get the ith index 
+                    detected_coordinate_match = vortex_positions[index_of_match]
+                    self.vortices[i].addCoor(*detected_coordinate_match)
+ 
+                    print("Vortex Trajectory: ", self.vortices[i].getTrajectory())
+
+                
+            if len(active_antivortex_coors)>0 and len(anti_vortex_positions) > 0 : 
+                antivortices_closest_index, distances_av = vq(active_antivortex_coors, anti_vortex_positions) 
+
+                for i in range(len(active_antivortex_coors)): 
+                    index_of_match = antivortices_closest_index[i] 
+                    detected_coordinate_match = anti_vortex_positions[index_of_match]
+                    self.antivortices[i].addCoor(*detected_coordinate_match)
+                    print("AntiVortex Trajectory: ", self.antivortices[i].getTrajectory())
+
             print("")
+        v_traj = [] 
+        av_traj = [] 
+        for i in range(len(self.vortices)): 
+            v_traj.append(self.vortices[i].getTrajectory()) 
+        for j in range(len(self.antivortices)): 
+            av_traj.append(self.antivortices[i].getTrajectory())
+        return v_traj, av_traj
+            
+
+    def list_duplicates(self, seq):
+        '''
+        Lists the indices of duplicates from a given sequence 
+        '''
+        tally = defaultdict(list)
+        for i,item in enumerate(seq):
+            tally[item].append(i)
+
+        return ((key,locs) for key,locs in tally.items() if len(locs)>1)
 
 
 
