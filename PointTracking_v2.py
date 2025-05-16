@@ -96,10 +96,10 @@ class PointTracker():
 
         # plot the circulation to see where the vortices are found!
         self.circulation = circulation 
-        return np.array(vortex_positions), np.array(anti_vortex_positions)
+        return np.array(vortex_positions), np.array(anti_vortex_positions), circulation
     
     def initGrid(self): 
-        vp, avp = self.detectVortices(self.psi_snaps[0])
+        vp, avp, circ = self.detectVortices(self.psi_snaps[0])
  
         if len(vp) > 0: # initialize for vortex
             for i in range(len(vp)): 
@@ -139,11 +139,12 @@ class PointTracker():
     def runTracker(self): 
         self.initGrid()
 
-    def labelVortices(self): 
+    def labelVortices(self, getCirc = False): 
         # loop through each of the frames of the simulation 
+        circ = []
         for i in range(1,len(self.psi_snaps)):  
             # find the vortex and anti-vortex positions           
-            vortex_positions, anti_vortex_positions = self.detectVortices(self.psi_snaps[i]) # this can be the features
+            vortex_positions, anti_vortex_positions, circulation = self.detectVortices(self.psi_snaps[i]) # this can be the features
             
             # find active point coordinates 
             active_vortex_coors, active_antivortex_coors = self.getVAntiVInfo() # this can be the codebook 
@@ -177,6 +178,8 @@ class PointTracker():
                     detected_coordinate_match = anti_vortex_positions[index_of_match]
                     self.antivortices[i].addCoor(*detected_coordinate_match)
                     print("AntiVortex Trajectory: ", self.antivortices[i].getTrajectory())
+            if getCirc: 
+                circ.append(circulation)
 
             print("")
         v_traj = [] 
@@ -184,7 +187,10 @@ class PointTracker():
         for i in range(len(self.vortices)): 
             v_traj.append(self.vortices[i].getTrajectory()) 
         for j in range(len(self.antivortices)): 
-            av_traj.append(self.antivortices[i].getTrajectory())
+            av_traj.append(self.antivortices[j].getTrajectory())
+        if getCirc: 
+            return v_traj, av_traj, circ
+        
         return v_traj, av_traj
             
 
