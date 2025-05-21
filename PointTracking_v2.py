@@ -167,7 +167,7 @@ class PointTracker():
                     detected_coordinate_match = vortex_positions[index_of_match]
                     self.vortices[i].addCoor(*detected_coordinate_match)
  
-                    print("Vortex Trajectory: ", self.vortices[i].getTrajectory())
+                    #print("Vortex Trajectory: ", self.vortices[i].getTrajectory())
 
                 
             if len(active_antivortex_coors)>0 and len(anti_vortex_positions) > 0 : 
@@ -177,11 +177,11 @@ class PointTracker():
                     index_of_match = antivortices_closest_index[i] 
                     detected_coordinate_match = anti_vortex_positions[index_of_match]
                     self.antivortices[i].addCoor(*detected_coordinate_match)
-                    print("AntiVortex Trajectory: ", self.antivortices[i].getTrajectory())
+                    #print("AntiVortex Trajectory: ", self.antivortices[i].getTrajectory())
             if getCirc: 
                 circ.append(circulation)
 
-            print("")
+            #print("")
         v_traj = [] 
         av_traj = [] 
         for i in range(len(self.vortices)): 
