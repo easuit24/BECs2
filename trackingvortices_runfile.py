@@ -110,12 +110,21 @@ parser.add_argument(
      help = 'Whether to run in debug mode',
      type = bool 
 )
+parser.add_argument(
+     "-nR",
+     "--numReal",
+     default = 250000,
+     help = 'Number of Real Steps',
+     type = int 
+)
 
 args = parser.parse_args() 
 tempFact = args.temp 
 debug = args.debug 
+numRealSteps = args.numReal
 
-g = gpe(npoints = 2**6, numImagSteps = 2000, numRealSteps = 250000, dtcoef = 0.0005, boxthickness = 0.4, Nsamples = 1, runAnim = True, animFileName = 'test.mp4', Tfact = tempFact, dst = False, vortex = True)
+print(args)
+g = gpe(npoints = 2**6, numImagSteps = 2000, numRealSteps = numRealSteps, dtcoef = 0.0005, boxthickness = 0.4, Nsamples = 1, runAnim = True, animFileName = 'test.mp4', Tfact = tempFact, dst = False, vortex = True)
 
 tracker = pt(g.snaps, g.dx, g.L, g.gpeobj.dt)
 
@@ -154,7 +163,7 @@ plt.ylabel('Distance')
 plt.title('Distance between vortices')
 # save
 plt.savefig(f'distanceplot_{tempFact}.png')
-np.savetxt(f'distancetraj_{tempFact}.png', distance_arr)
+np.savetxt(f'distancetraj_{tempFact}.csv', distance_arr)
 
 # figure for angle 
 plt.figure() 

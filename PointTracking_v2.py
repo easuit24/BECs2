@@ -90,6 +90,7 @@ class PointTracker():
                     vortex_positions.append([(j+0.5)*self.dx, (i+0.5)*self.dx])
                 elif circulation_ij < -6.2: 
                     anti_vortex_positions.append([(j+0.5)*self.dx, (i+0.5)*self.dx]) 
+                    #anti_vortex_positions.append([(j)*self.dx, (i)*self.dx])
 
         circulation  = -dS_y_left -dS_x_top + dS_y_right + dS_x_bottom  
         
