@@ -243,7 +243,7 @@ class GPETimeEv():
 
         return psiVort
     
-    def vortexFunc(self, psi, locs = [(1,0),(0,7),(0,0)], antiV = False): 
+    def vortexFunc(self, psi, locs = [(0,0)], antiV = False): 
         '''
         Sets an array of vortices or anti-vortices at set locations in the box
 

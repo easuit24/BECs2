@@ -435,7 +435,7 @@ class FiniteTempGPE():
             path = fr"C:\Users\TQC User\Desktop\BECs2\{filename}.mp4"
 
         fig, ax = plt.subplots() 
-        data = plt.imshow(np.abs(self.snaps[0])**2, extent = [-self.winL/2, self.winL/2, -self.winL/2, self.winL/2],cmap = plt.cm.hot)
+        data = plt.imshow(np.abs(self.snaps[0])**2, extent = [-self.winL/2, self.winL/2, -self.winL/2, self.winL/2],cmap = plt.cm.hot, origin = 'lower')
         # v1,v2 = None 
         # if self.vortex: 
         #     v1 = plt.scatter(self.vortex_positions[0][0]/self.dx+self.winL//4, self.vortex_positions[0][1]/self.dx+self.winL//4, color = 'blue', marker = '<', s = 20, alpha = 0.3)
