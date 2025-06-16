@@ -1,0 +1,278 @@
+import numpy as np
+import matplotlib.pyplot as plt 
+from matplotlib import animation 
+from scipy.spatial.distance import cdist
+
+# import classical field module 
+from classicalfield_orig import FiniteTempGPE as gpe 
+
+class VortexTracker(): 
+
+    def __init__(self, psi_snaps, L, dx, border_threshold = 4): 
+         self.psi_snaps = psi_snaps
+         self.L = L 
+         self.dx = dx 
+         self.border_threshold = border_threshold 
+         self.circ_frames = np.zeros((len(self.psi_snaps), len(self.psi_snaps[0])//2, len(self.psi_snaps[0])//2))
+
+         self.main()
+
+    def detectVortices(self, psi):
+            # extract the inner part of the box
+            
+            psi = psi[int(self.L/2/self.dx):int(3*self.L/2/self.dx), int(self.L/2/self.dx):int(3*self.L/2/self.dx)]
+        
+            Nx, Ny = np.shape(psi)
+            S = np.angle(psi)
+            vortex_positions = [] 
+            anti_vortex_positions = [] 
+        
+            # initialize arrays
+            dS_y_left = np.zeros((len(psi[0]), len(psi[0])))
+            dS_y_right = np.zeros((len(psi[0]), len(psi[0])))
+            dS_x_top = np.zeros((len(psi[0]), len(psi[0])))
+            dS_x_bottom = np.zeros((len(psi[0]), len(psi[0])))
+        
+            for i in range(self.border_threshold, Nx-self.border_threshold):
+                for j in range(self.border_threshold,Ny-self.border_threshold):
+                    dS_y_left[i,j] = np.mod((S[i, j+1]-S[i,j])+np.pi, 2*np.pi)-np.pi
+                    dS_y_right[i,j] = np.mod((S[i+1, j+1] - S[i+1, j])+np.pi, 2*np.pi)-np.pi
+                    dS_x_top[i,j] = np.mod((S[i+1, j+1]-S[i,j+1])+np.pi, 2*np.pi)-np.pi
+                    dS_x_bottom[i,j] = np.mod((S[i+1,j]-S[i,j])+np.pi, 2*np.pi)-np.pi
+                    circulation_ij = -dS_y_left[i,j] -dS_x_top[i,j] + dS_y_right[i,j] + dS_x_bottom[i,j] 
+
+                    if circulation_ij > 6.2: 
+                        vortex_positions.append([(j+0.5)*self.dx, (i+0.5)*self.dx])
+                    elif circulation_ij < -6.2: 
+                        anti_vortex_positions.append([(j+0.5)*self.dx, (i+0.5)*self.dx]) 
+                        #anti_vortex_positions.append([(j)*self.dx, (i)*self.dx])
+
+            circulation  = -dS_y_left -dS_x_top + dS_y_right + dS_x_bottom  
+            
+
+            # plot the circulation to see where the vortices are found!
+            self.circulation = circulation 
+            return np.array(vortex_positions), np.array(anti_vortex_positions), circulation
+    
+    def track_vortices_across_frames(self, frames, max_dist=5):
+        """
+        frames: list of lists of (x, y) tuples
+        Returns: dict {vortex_id: [(t, x, y), ...]}
+        """
+        next_id = 0
+        tracks = {}  # {id: [(t, x, y)]}
+        prev_positions = {}  # {id: (x, y)}
+
+        # Initialize with frame 0
+        for coord in frames[0]:
+            tracks[next_id] = [(0, *coord)]
+            prev_positions[next_id] = coord
+            next_id += 1
+
+        for t in range(1, len(frames)):
+            current_coords = np.array(frames[t])
+            if len(current_coords) == 0: # case for if no vortices are found in a frame 
+                continue
+
+            # Match to previous positions 
+            prev_ids = list(prev_positions.keys())
+            prev_coords = np.array([prev_positions[i] for i in prev_ids]) # extract the coordinates for all active vortices 
+
+            distance_matrix = cdist(prev_coords, current_coords) # find distances 
+            #matched_ids = set()
+            used_indices = set()
+            new_prev_positions = {}
+
+            for i, row in enumerate(distance_matrix):
+                j = np.argmin(row) # get the index of the minimum distance 
+                if row[j] < max_dist and j not in used_indices:
+                    vortex_id = prev_ids[i]
+                    x, y = current_coords[j]
+                    tracks[vortex_id].append((t, x, y))
+                    new_prev_positions[vortex_id] = (x, y)
+                    #matched_ids.add(vortex_id)
+                    used_indices.add(j)
+
+            # Add new vortices (unmatched)
+            for j, coord in enumerate(current_coords):
+                if j not in used_indices:
+                    tracks[next_id] = [(t, *coord)]
+                    new_prev_positions[next_id] = coord
+                    next_id += 1
+
+            prev_positions = new_prev_positions
+
+        return tracks
+
+    def compute_distance_between_tracks(self, track1, track2):
+        # to do: figure out how to map arrays that are not the same length but overlap in time
+        distances = []
+        angles = [] 
+        for (t1, x1, y1), (t2, x2, y2) in zip(track1, track2):
+            if t1 == t2:
+                dist = np.sqrt((x2 - x1)**2 + (y2 - y1)**2)
+                distances.append((t1, dist))
+
+                ang = np.arctan2(np.abs(y2-y1),np.abs(x2-x1))
+                angles.append((t1, ang))
+        return distances, angles
+
+    def plot_distance_over_time(self, distances):
+        if not distances:
+            print("No overlapping time points to compute distance.")
+            return
+        times, dists = zip(*distances)
+        plt.plot(times, dists, marker='o')
+        plt.xlabel("Frame")
+        plt.ylabel("Distance")
+        plt.title("Distance Between Vortices Over Time")
+        plt.grid(True)
+        plt.show()
+
+    def plot_angle_over_time(self, angles):
+        if not angles:
+            print("No overlapping time points to compute angles.")
+            return
+        times, angs = zip(*angles)
+        plt.plot(times, angs, marker='o')
+        plt.xlabel("Frame")
+        plt.ylabel("Angle [rad]")
+        plt.title("Angle Between Vortices Over Time")
+        plt.grid(True)
+        plt.show()
+
+    # also allow for plotting the tracking on top of the circulation 
+    # def generalAnimation(self, filename, dataset, tracks, dt, L, periodic = False): 
+    #     time_tracking = np.arange(0, len(dataset))*250*dt
+    #     if filename != None: 
+    #             path = fr"C:\Users\TQC User\Desktop\BECs2\{filename}.mp4"
+    #     fig, ax = plt.subplots() 
+    #     if not periodic: 
+    #         data = plt.imshow(dataset[0],  extent = [-L/2, L/2, -L/2, L/2], origin = 'lower')
+    #     else: 
+    #         data = plt.imshow(dataset[0], extent = [-L/2, L/2, -L/2, L/2], cmap = 'twilight', origin = 'lower')
+    #     plt.colorbar() 
+    #     plt.clim(-2*np.pi, 2*np.pi)
+
+
+    #     # avi_traj1 = antiv_traj_arr[0] # the trajecory of the ith antivortex 
+    #     # v1 = plt.scatter(avi_traj1[0][0]+0.5-L/2, avi_traj1[0][1]+0.5-L/2, alpha = 0.3, s = 20, color = 'blue')
+
+    #     # avi_traj2 = antiv_traj_arr[1] # the trajecory of the ith antivortex 
+    #     # v2 = plt.scatter(avi_traj2[0][0]+0.5-L/2, avi_traj2[0][1]+0.5-L/2, alpha = 0.3, s = 20, color = 'blue')
+
+
+    #     # try storing in an array 
+    # #     vort_arr = [] 
+        
+    # #     for i in range(len(antiv_traj_arr)): 
+    # #          avi_traj = antiv_traj_arr[i] 
+    # #          v = plt.scatter(avi_traj[0][0]+0.5-L/2, avi_traj[0][1]+0.5-L/2, alpha = 0.3, s = 20, color = 'blue')
+    # #          vort_arr.append(v) 
+    #     ### 
+    #     # v1 = vort_arr[0]
+    #     # v2 = vort_arr[1]
+
+
+    #     ###
+    #     #plt.imshow(circ_frames[time], origin = 'lower', extent = [-g.L/2, g.L/2, -g.L/2, g.L/2])
+    #     vort_arr = [] 
+    #     for i in range(len(tracks)): 
+    #         for j in range(len(tracks[i])): 
+    #             if tracks[i][j][0] == 0: 
+    #                 v = plt.scatter(tracks[i][j][1]-L/2, tracks[i][j][2]-L/2, alpha = 0.2, color = 'red')
+    #                 vort_arr.append(v) 
+    #                 plt.text(tracks[i][j][1]-L/2, tracks[i][j][2]-L/2, i)
+    #     ### 
+
+
+    #     time_text = ax.text(0.05, 0.95,'',horizontalalignment='left',verticalalignment='top', transform=ax.transAxes,  bbox=dict(facecolor='red', alpha=0.5))
+    #     time_text.set_text('time = 0')
+
+    #     plt.xlabel("x", fontsize = 16)
+    #     plt.ylabel('y', fontsize = 16)
+    #     plt.title(f'Animation for L={L}')
+
+    #     def animate(i): 
+    #         data.set_data(dataset[i])
+
+    #         for j in range(len(tracks)):
+    #             for k in range(len(tracks[i])): 
+    #                 if tracks[j][k][0] == i: 
+    #                     plt.scatter(tracks[j][k][1]-L/2, tracks[j][k][2]-L/2, alpha = 0.2, color = 'red')
+    #                     plt.text(tracks[j][k][1]-L/2, tracks[j][k][2]-L/2, j)
+    #     #    for j in range(len(vort_arr)): 
+    #     #         vort_arr[j].set_offsets([antiv_traj_arr[j][i][0]+0.5-L/2, antiv_traj_arr[j][i][1]+0.5-L/2])
+    
+    #         time_text.set_text('time = %.1d' % time_tracking[i]) # find an array that tracks the time or define one based on dt and the number of points 
+    #         #return data, time_text
+
+    #         #vort_arr = [v1,v2]
+    #         return data, time_text
+    #     anim = animation.FuncAnimation(fig, animate, frames = len(dataset), blit = True)
+    #     anim.save(path)
+        
+    #     plt.show() 
+
+    #     return anim
+
+
+
+    def main(self): 
+        vort = [] 
+        avort = [] 
+
+        for i in range(len(self.psi_snaps)): 
+            detection = self.detectVortices(self.psi_snaps[i])
+            vort.append(detection[0])  
+            avort.append(detection[1]) 
+            self.circ_frames[i] = detection[2] 
+
+        tracks = self.track_vortices_across_frames(avort)
+
+
+        # Sort: Find the two IDs that correspond to original pair 
+        ids = sorted(tracks, key=lambda k: len(tracks[k]), reverse=True)[:2] # sort by the length of the tracks
+        track1 = tracks[ids[0]]
+        track2 = tracks[ids[1]]
+
+        # Compute and plot distance and angles 
+        self.distances, self.angles = self.compute_distance_between_tracks(track1, track2)
+        self.plot_distance_over_time(self.distances)
+        self.plot_angle_over_time(self.angles)
+
+class CompareDistances(): 
+    def __init__(self, temperatures = np.arange(0, 0.8, step = 0.1), numSamples = 3, npoints = 2**6): 
+        self.temperatures = temperatures 
+        self.numSamples = numSamples
+        self.npoints = npoints 
+        
+        self.distances = [] 
+        self.angles = [] 
+
+        self.calcAverages() 
+
+    def calcAverages(self): 
+        for temp in self.temperatures: 
+            avg_dist_t = np.zeros(2*self.npoints)
+            avg_angle_t = np.zeros(2*self.npoints)
+            for i in range(self.numSamples): 
+                g = gpe(npoints = self.npoints, numImagSteps = 2000, numRealSteps = 50000, dtcoef = 0.0005, boxthickness = 0.4, Nsamples = 1, runAnim = False, Tfact = temp, dst = False, vortex = True)
+                v = VortexTracker(g.snaps, g.L, g.dx) 
+                times,dist = zip(*v.distances) 
+                times,angles = zip(*v.angles) 
+                avg_dist_t += np.array(dist) 
+                avg_angle_t += np.array(angles) 
+            avg_dist_t = avg_dist_t/self.numSamples
+            avg_angle_t = avg_angle_t/self.numSamples 
+
+            self.distances.append(avg_dist_t)
+            self.angles.append(avg_angle_t) 
+
+
+
+
+
+
+
+
