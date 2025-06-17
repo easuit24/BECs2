@@ -8,14 +8,14 @@ from classicalfield_orig import FiniteTempGPE as gpe
 
 class VortexTracker(): 
 
-    def __init__(self, psi_snaps, L, dx, border_threshold = 4): 
-         self.psi_snaps = psi_snaps
-         self.L = L 
-         self.dx = dx 
-         self.border_threshold = border_threshold 
-         self.circ_frames = np.zeros((len(self.psi_snaps), len(self.psi_snaps[0])//2, len(self.psi_snaps[0])//2))
-
-         self.main()
+    def __init__(self, psi_snaps, L, dx, border_threshold = 4, plot = True): 
+        self.psi_snaps = psi_snaps
+        self.L = L 
+        self.dx = dx 
+        self.border_threshold = border_threshold 
+        self.circ_frames = np.zeros((len(self.psi_snaps), len(self.psi_snaps[0])//2, len(self.psi_snaps[0])//2))
+        self.plot = plot 
+        self.main()
 
     def detectVortices(self, psi):
             # extract the inner part of the box
@@ -54,7 +54,7 @@ class VortexTracker():
             self.circulation = circulation 
             return np.array(vortex_positions), np.array(anti_vortex_positions), circulation
     
-    def track_vortices_across_frames(self, frames, max_dist=5):
+    def track_vortices_across_frames2(self, frames, max_dist=5):
         """
         frames: list of lists of (x, y) tuples
         Returns: dict {vortex_id: [(t, x, y), ...]}
@@ -79,12 +79,14 @@ class VortexTracker():
             prev_coords = np.array([prev_positions[i] for i in prev_ids]) # extract the coordinates for all active vortices 
 
             distance_matrix = cdist(prev_coords, current_coords) # find distances 
+
+            self.distance_matrix = distance_matrix
             #matched_ids = set()
             used_indices = set()
             new_prev_positions = {}
 
             for i, row in enumerate(distance_matrix):
-                j = np.argmin(row) # get the index of the minimum distance 
+                j = np.argmin(row) # get the index of the minimum distance in the row... but now it might assign things to that vortex that are actuallly closer to a different vortex...
                 if row[j] < max_dist and j not in used_indices:
                     vortex_id = prev_ids[i]
                     x, y = current_coords[j]
@@ -100,6 +102,54 @@ class VortexTracker():
                     new_prev_positions[next_id] = coord
                     next_id += 1
 
+            prev_positions = new_prev_positions
+
+        return tracks
+    
+
+    def track_vortices_across_frames(self, frames, initial_locs = [(0,0), (3,0)], max_dist=5):
+        """
+        frames: list of lists of (x, y) tuples
+        Returns: dict {vortex_id: [(t, x, y), ...]}
+        """
+        next_id = 0
+        tracks = {}  # {id: [(t, x, y)]}
+        prev_positions = {}  # {id: (x, y)}
+
+        # Initialize with initial states set in the vortex generation 
+        tracks[0] = [(0, initial_locs[0][0]+self.L/2, initial_locs[0][1]+self.L/2)]
+        tracks[1] = [(0, initial_locs[1][0]+self.L/2, initial_locs[1][1]+self.L/2)]
+
+        prev_positions[0] = (initial_locs[0][0]+self.L/2, initial_locs[0][1]+self.L/2)
+        prev_positions[1] = (initial_locs[1][0]+self.L/2, initial_locs[1][1]+self.L/2)
+
+        # Iterate over all the detected coordinates in each of the frames
+        for t in range(0, len(frames)):
+            current_coords = np.array(frames[t])
+            if len(current_coords) == 0: # case for if no vortices are found in a frame 
+                continue
+
+            # Match to previous positions 
+            prev_ids = list(prev_positions.keys())
+            prev_coords = np.array([prev_positions[i] for i in prev_ids]) # extract the coordinates for all active vortices 
+
+            distance_matrix = cdist(prev_coords, current_coords) # find distances 
+
+
+            self.distance_matrix = distance_matrix
+
+            used_indices = set()
+            new_prev_positions = {}
+
+            for i, row in enumerate(distance_matrix):
+                j = np.argmin(row) # get the index of the minimum distance in the row... but now it might assign things to that vortex that are actuallly closer to a different vortex...
+                if row[j] < max_dist and j not in used_indices:
+                    vortex_id = prev_ids[i]
+                    x, y = current_coords[j]
+
+                    tracks[vortex_id].append((t+1, x, y))
+                    new_prev_positions[vortex_id] = (x, y)
+                    used_indices.add(j)
             prev_positions = new_prev_positions
 
         return tracks
@@ -238,14 +288,15 @@ class VortexTracker():
 
         # Compute and plot distance and angles 
         self.distances, self.angles = self.compute_distance_between_tracks(track1, track2)
-        self.plot_distance_over_time(self.distances)
-        self.plot_angle_over_time(self.angles)
+        if self.plot: 
+            self.plot_distance_over_time(self.distances)
+            self.plot_angle_over_time(self.angles)
 
 class CompareDistances(): 
-    def __init__(self, temperatures = np.arange(0, 0.8, step = 0.1), numSamples = 3, npoints = 2**6): 
+    def __init__(self, temperatures = np.arange(0.5, 1.1, step = 0.1), numSamples = 3, numRealSteps = 50000): 
         self.temperatures = temperatures 
         self.numSamples = numSamples
-        self.npoints = npoints 
+        self.numRealSteps = numRealSteps 
         
         self.distances = [] 
         self.angles = [] 
@@ -254,11 +305,11 @@ class CompareDistances():
 
     def calcAverages(self): 
         for temp in self.temperatures: 
-            avg_dist_t = np.zeros(2*self.npoints)
-            avg_angle_t = np.zeros(2*self.npoints)
+            avg_dist_t = np.zeros(self.numRealSteps//250+2)
+            avg_angle_t = np.zeros(self.numRealSteps//250+2)
             for i in range(self.numSamples): 
-                g = gpe(npoints = self.npoints, numImagSteps = 2000, numRealSteps = 50000, dtcoef = 0.0005, boxthickness = 0.4, Nsamples = 1, runAnim = False, Tfact = temp, dst = False, vortex = True)
-                v = VortexTracker(g.snaps, g.L, g.dx) 
+                g = gpe(npoints = 2**6, numImagSteps = 2000, numRealSteps = self.numRealSteps, dtcoef = 0.0005, boxthickness = 0.4, Nsamples = 1, runAnim = False, Tfact = temp, dst = False, vortex = True)
+                v = VortexTracker(g.snaps, g.L, g.dx, plot = False) 
                 times,dist = zip(*v.distances) 
                 times,angles = zip(*v.angles) 
                 avg_dist_t += np.array(dist) 
@@ -268,6 +319,7 @@ class CompareDistances():
 
             self.distances.append(avg_dist_t)
             self.angles.append(avg_angle_t) 
+        self.times = times 
 
 
 
