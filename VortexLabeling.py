@@ -305,6 +305,8 @@ class CompareDistances():
 
     def calcAverages(self): 
         for temp in self.temperatures: 
+            sampled_distances = []
+            sampled_angles = []
             avg_dist_t = np.zeros(self.numRealSteps//250+2)
             avg_angle_t = np.zeros(self.numRealSteps//250+2)
             for i in range(self.numSamples): 
@@ -312,14 +314,29 @@ class CompareDistances():
                 v = VortexTracker(g.snaps, g.L, g.dx, plot = False) 
                 times,dist = zip(*v.distances) 
                 times,angles = zip(*v.angles) 
-                avg_dist_t += np.array(dist) 
-                avg_angle_t += np.array(angles) 
-            avg_dist_t = avg_dist_t/self.numSamples
-            avg_angle_t = avg_angle_t/self.numSamples 
+                if len(dist) < len(avg_dist_t): 
+                    dist = np.pad(dist, (0,len(avg_dist_t)-len(dist)), 'constant', constant_values = np.nan)
+                    angles = np.pad(angles, (0,len(avg_angle_t)-len(angles)), 'constant', constant_values = np.nan)
+
+                # collect the distances and angles into an array 
+                sampled_distances.append(dist) 
+                sampled_angles.append(angles) 
+
+
+                #avg_dist_t += np.array(dist) 
+                #avg_angle_t += np.array(angles) 
+            avg_dist_t = np.ma.average(np.ma.masked_array(sampled_distances, np.isnan(sampled_distances)), axis = 0)
+            avg_angle_t = np.ma.average(np.ma.masked_array(sampled_angles, np.isnan(sampled_angles)), axis = 0)
+            #avg_dist_t = np.average(sampled_distances, axis = 0) 
+            #avg_angle_t = np.average(sampled_angles, axis = 0)
+            print(avg_dist_t)
+            #avg_dist_t = avg_dist_t/self.numSamples
+            #avg_angle_t = avg_angle_t/self.numSamples 
 
             self.distances.append(avg_dist_t)
             self.angles.append(avg_angle_t) 
         self.times = times 
+        self.dt = g.gpeobj.dt
 
 
 
