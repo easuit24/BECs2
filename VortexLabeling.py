@@ -126,13 +126,16 @@ class VortexTracker():
         # Iterate over all the detected coordinates in each of the frames
         for t in range(0, len(frames)):
             current_coords = np.array(frames[t])
-            if len(current_coords) == 0: # case for if no vortices are found in a frame 
+            if len(current_coords) < 2: # case for if no vortices are found in a frame 
                 continue
 
             # Match to previous positions 
             prev_ids = list(prev_positions.keys())
             prev_coords = np.array([prev_positions[i] for i in prev_ids]) # extract the coordinates for all active vortices 
-
+            if len(prev_coords) != 2: 
+                print("Error with prev coords: ", prev_coords, np.shape(prev_coords)) 
+            if len(current_coords) != 2: 
+                print("Error with current coords: ", current_coords, np.shape(current_coords))
             distance_matrix = cdist(prev_coords, current_coords) # find distances 
 
 
@@ -304,7 +307,9 @@ class CompareDistances():
         self.calcAverages() 
 
     def calcAverages(self): 
-        for temp in self.temperatures: 
+        self.all_distance_trajectories = np.zeros((self.numSamples, len(self.temperatures), self.numRealSteps//250+2)) 
+        self.all_angle_trajectories = np.zeros((self.numSamples, len(self.temperatures), self.numRealSteps//250+2))
+        for t, temp in enumerate(self.temperatures): 
             sampled_distances = []
             sampled_angles = []
             avg_dist_t = np.zeros(self.numRealSteps//250+2)
@@ -321,6 +326,9 @@ class CompareDistances():
                 # collect the distances and angles into an array 
                 sampled_distances.append(dist) 
                 sampled_angles.append(angles) 
+                
+                self.all_distance_trajectories[i][t] = dist 
+                self.all_angle_trajectories[i][t] = angles
 
 
                 #avg_dist_t += np.array(dist) 
@@ -332,9 +340,11 @@ class CompareDistances():
             print(avg_dist_t)
             #avg_dist_t = avg_dist_t/self.numSamples
             #avg_angle_t = avg_angle_t/self.numSamples 
+            
 
             self.distances.append(avg_dist_t)
             self.angles.append(avg_angle_t) 
+
         self.times = times 
         self.dt = g.gpeobj.dt
 
