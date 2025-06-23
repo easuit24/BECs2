@@ -132,10 +132,11 @@ class VortexTracker():
             # Match to previous positions 
             prev_ids = list(prev_positions.keys())
             prev_coords = np.array([prev_positions[i] for i in prev_ids]) # extract the coordinates for all active vortices 
-            if len(prev_coords) != 2: 
-                print("Error with prev coords: ", prev_coords, np.shape(prev_coords)) 
-            if len(current_coords) != 2: 
-                print("Error with current coords: ", current_coords, np.shape(current_coords))
+
+            # if len(prev_coords) < 2: 
+            #     print(prev_coords)
+            #     continue 
+
             distance_matrix = cdist(prev_coords, current_coords) # find distances 
 
 
@@ -153,6 +154,10 @@ class VortexTracker():
                     tracks[vortex_id].append((t+1, x, y))
                     new_prev_positions[vortex_id] = (x, y)
                     used_indices.add(j)
+            if len(prev_positions) < 2: 
+                print("Less than 2 previous vortices...")
+                print(prev_positions) 
+                print(current_coords)
             prev_positions = new_prev_positions
 
         return tracks
