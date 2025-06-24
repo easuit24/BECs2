@@ -133,9 +133,9 @@ class VortexTracker():
             prev_ids = list(prev_positions.keys())
             prev_coords = np.array([prev_positions[i] for i in prev_ids]) # extract the coordinates for all active vortices 
 
-            # if len(prev_coords) < 2: 
-            #     print(prev_coords)
-            #     continue 
+            if len(prev_coords) < 2: 
+                #print(prev_coords)
+                continue 
 
             distance_matrix = cdist(prev_coords, current_coords) # find distances 
 
@@ -154,10 +154,10 @@ class VortexTracker():
                     tracks[vortex_id].append((t+1, x, y))
                     new_prev_positions[vortex_id] = (x, y)
                     used_indices.add(j)
-            if len(prev_positions) < 2: 
-                print("Less than 2 previous vortices...")
-                print(prev_positions) 
-                print(current_coords)
+            # if len(prev_positions) < 2: 
+            #     print("Less than 2 previous vortices...")
+            #     print(prev_positions) 
+            #     print(current_coords)
             prev_positions = new_prev_positions
 
         return tracks
@@ -309,6 +309,9 @@ class CompareDistances():
         self.distances = [] 
         self.angles = [] 
 
+        self.distances_std = [] 
+        self.angles_std = [] 
+
         self.calcAverages() 
 
     def calcAverages(self): 
@@ -340,6 +343,9 @@ class CompareDistances():
                 #avg_angle_t += np.array(angles) 
             avg_dist_t = np.ma.average(np.ma.masked_array(sampled_distances, np.isnan(sampled_distances)), axis = 0)
             avg_angle_t = np.ma.average(np.ma.masked_array(sampled_angles, np.isnan(sampled_angles)), axis = 0)
+
+            std_dist_t = np.ma.std(np.ma.masked_array(sampled_distances, np.isnan(sampled_distances)), axis = 0)
+            std_angle_t = np.ma.std(np.ma.masked_array(sampled_angles, np.isnan(sampled_angles)), axis = 0)
             #avg_dist_t = np.average(sampled_distances, axis = 0) 
             #avg_angle_t = np.average(sampled_angles, axis = 0)
             print(avg_dist_t)
@@ -349,6 +355,9 @@ class CompareDistances():
 
             self.distances.append(avg_dist_t)
             self.angles.append(avg_angle_t) 
+
+            self.distances_std.append(std_dist_t) 
+            self.angles_std.append(std_angle_t)
 
         self.times = times 
         self.dt = g.gpeobj.dt

@@ -4,9 +4,9 @@ import matplotlib.animation as animation
 import argparse 
 
 from classicalfield_orig import FiniteTempGPE as gpe 
-from VortexLabeling import VortexTracker as vt 
+#from VortexLabeling import VortexTracker as vt 
 from VortexLabeling import CompareDistances as comp
-from PointTracking_v2 import PointTracker as pt
+#from PointTracking_v2 import PointTracker as pt
 
 
 parser = argparse.ArgumentParser(description = 'Vortex temperature analysis arguments')
