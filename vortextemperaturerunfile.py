@@ -2,13 +2,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import argparse 
+import time 
 
 from classicalfield_orig import FiniteTempGPE as gpe 
 #from VortexLabeling import VortexTracker as vt 
 from VortexLabeling import CompareDistances as comp
 #from PointTracking_v2 import PointTracker as pt
 
-
+t0 = time.time() 
 parser = argparse.ArgumentParser(description = 'Vortex temperature analysis arguments')
 
 parser.add_argument(
@@ -72,4 +73,15 @@ plt.xlabel("Frame")
 plt.ylabel("Distance")
 plt.title("Distance Between Vortices Over Time")
 plt.savefig(f'distances_range{args.start}{args.end}_{args.filename}.png')
+
+plt.figure() 
+for i in range(len(c.distances)): 
+    plt.errorbar(np.arange(0, len(c.distances[i])), c.distances[i], c.distances_std, marker = 'o')
+plt.grid(True)
+plt.xlabel("Frame")
+plt.ylabel("Distance")
+plt.title("Distance Between Vortices Over Time")
+plt.savefig(f'distances_range{args.start}{args.end}_{args.filename}_errorplot.png')
+
+print("Total Run Time: ", time.time() - t0)
 #plt.show() 
