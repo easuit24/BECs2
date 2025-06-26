@@ -63,6 +63,7 @@ c = comp(numRealSteps = numRealSteps, numSamples = numSamples, temperatures = te
 
 # save the distance trajectory 
 np.savetxt(f'{args.filename}.csv', c.distances)
+np.savetxt(f'{args.filename}_alltraj.csv', c.all_distance_trajectories)
 
 plt.figure() 
 for i in range(len(c.distances)): 
