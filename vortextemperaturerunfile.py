@@ -54,16 +54,25 @@ parser.add_argument(
     help = 'filename for the distance .csv file output',
     type = str 
 )
+parser.add_argument(
+    '-r',
+    '--runAnim',
+    default = False,
+    help = 'whether to run the animation or not (boolean)',
+    type = bool 
+)
 args = parser.parse_args() 
+print("args: ", args)
 numRealSteps = args.numRealSteps 
 numSamples = args.numSamples 
 temperatures = np.arange(args.start, args.end, args.step)
 
-c = comp(numRealSteps = numRealSteps, numSamples = numSamples, temperatures = temperatures)
+c = comp(numRealSteps = numRealSteps, numSamples = numSamples, temperatures = temperatures, runAnim = args.runAnim)
 
 # save the distance trajectory 
 np.savetxt(f'{args.filename}.csv', c.distances)
 np.savetxt(f'{args.filename}_alltraj.csv', c.all_distance_trajectories[:,0])
+np.savetxt(f'{args.filename}_alltraj_ang.csv', c.all_angle_trajectories[:,0])
 
 plt.figure() 
 for i in range(len(c.distances)): 

@@ -301,10 +301,13 @@ class VortexTracker():
             self.plot_angle_over_time(self.angles)
 
 class CompareDistances(): 
-    def __init__(self, temperatures = np.arange(0.5, 1.1, step = 0.1), numSamples = 3, numRealSteps = 50000): 
+    def __init__(self, temperatures = np.arange(0.5, 1.1, step = 0.1), numSamples = 3, numRealSteps = 50000, runAnim = False, numAnimations = 1, animFileName = 'unnamed'): 
         self.temperatures = temperatures 
         self.numSamples = numSamples
         self.numRealSteps = numRealSteps 
+        self.runAnim = runAnim 
+        self.numAnimations = numAnimations
+        self.animName = animFileName
         
         self.distances = [] 
         self.angles = [] 
@@ -323,7 +326,13 @@ class CompareDistances():
             avg_dist_t = np.zeros(self.numRealSteps//250+2)
             avg_angle_t = np.zeros(self.numRealSteps//250+2)
             for i in range(self.numSamples): 
-                g = gpe(npoints = 2**6, numImagSteps = 2000, numRealSteps = self.numRealSteps, dtcoef = 0.0005, boxthickness = 0.4, Nsamples = 1, runAnim = False, Tfact = temp, dst = False, vortex = True)
+                print(i) 
+                print(int(self.numSamples//self.numAnimations))
+                if self.runAnim and (i+1)%int(self.numSamples//self.numAnimations) == 0:
+                    print("Doing animation")
+                    g = gpe(npoints = 2**6, numImagSteps = 2000, numRealSteps = self.numRealSteps, dtcoef = 0.0005, boxthickness = 0.4, Nsamples = 1, runAnim = True, animFileName=self.animName, Tfact = temp, dst = False, vortex = True)
+                else: 
+                    g = gpe(npoints = 2**6, numImagSteps = 2000, numRealSteps = self.numRealSteps, dtcoef = 0.0005, boxthickness = 0.4, Nsamples = 1, runAnim = False, Tfact = temp, dst = False, vortex = True)
                 v = VortexTracker(g.snaps, g.L, g.dx, plot = False) 
                 times,dist = zip(*v.distances) 
                 times,angles = zip(*v.angles) 
