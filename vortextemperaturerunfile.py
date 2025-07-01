@@ -66,8 +66,8 @@ print("args: ", args)
 numRealSteps = args.numRealSteps 
 numSamples = args.numSamples 
 temperatures = np.arange(args.start, args.end, args.step)
-
-c = comp(numRealSteps = numRealSteps, numSamples = numSamples, temperatures = temperatures, runAnim = args.runAnim)
+fileinfo = f'T{args.start}_S{args.numSamples}_s{args.numRealSteps}_{np.round(time.time(), 3)}'
+c = comp(numRealSteps = numRealSteps, numSamples = numSamples, temperatures = temperatures, runAnim = args.runAnim, animFileName=args.filename)
 
 # save the distance trajectory 
 np.savetxt(f'{args.filename}.csv', c.distances)

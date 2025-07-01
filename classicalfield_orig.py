@@ -9,6 +9,9 @@ from gpeboxclean_orig import GPETimeEv as gpeb
 from PointTracking_v2 import PointTracker as pt
 
 
+
+
+
 class FiniteTempGPE():
     def __init__(self, L = 50, npoints = 2**9, dim = 2, numImagSteps = 500, numRealSteps = 1000, T = 0, boxthickness = 2, Nsamples = 10, winMult = 2, dtcoef = 0.05, vortex = False, antiV = False, Tfact = 1/50, imp = False, impPsi = None, runAnim = False, animFileName = None, dst = True): 
         self.L = L 
@@ -72,7 +75,7 @@ class FiniteTempGPE():
             if not self.vortex: 
                 self.animatepsi2d(self.animFileName) 
             else: 
-                self.animatepsi2_vortices(self.animFileName)
+                self.animatepsi2d(self.animFileName)
                 #self.animatepsi2d_vortex(self.animFileName)
 
         # generate the wavefunctions for the propagation 
@@ -465,71 +468,71 @@ class FiniteTempGPE():
             #return data, time_text, v1, v2 
         anim = animation.FuncAnimation(fig, animate, frames = len(self.snaps), blit = True)
 
-        plt.show() 
+        #plt.show() 
         
         anim.save(path)
 
         return anim
     
-    def animatepsi2_vortices(self, filename): 
-        tracker = pt(self.snaps, self.dx, self.L, self.gpeobj.dt)
-        v_traj, antiv_traj, circ_array = pt.labelVortices(tracker, getCirc = True) 
-        v_traj_arr = np.array(v_traj) 
-        antiv_traj_arr = np.array(antiv_traj)
-        time_tracking = np.arange(0, len(self.snaps))*250*self.gpeobj.dt
-        if filename != None: 
-                path = fr"C:\Users\TQC User\Desktop\BECs2\{filename}.mp4"
-        fig, ax = plt.subplots() 
-        data = plt.imshow(np.abs(self.snaps[0])**2, extent = [-self.winL/2, self.winL/2, -self.winL/2, self.winL/2], cmap = plt.cm.hot, origin = 'lower')
-        plt.colorbar() 
-        L = self.L
+    # def animatepsi2_vortices(self, filename): 
 
-        # avi_traj1 = antiv_traj_arr[0] # the trajecory of the ith antivortex 
-        # v1 = plt.scatter(avi_traj1[0][0]+0.5-L/2, avi_traj1[0][1]+0.5-L/2, alpha = 0.3, s = 20, color = 'blue')
+    #     tracker = vt(self.snaps, self.L, self.dx)
 
-        # avi_traj2 = antiv_traj_arr[1] # the trajecory of the ith antivortex 
-        # v2 = plt.scatter(avi_traj2[0][0]+0.5-L/2, avi_traj2[0][1]+0.5-L/2, alpha = 0.3, s = 20, color = 'blue')
+    #     vortex1_traj = tracker.vortex1
+    #     vortex2_traj = tracker.vortex2 
+
+    #     time_tracking = np.arange(0, len(self.snaps))*250*self.gpeobj.dt
+    #     if filename != None: 
+    #             path = fr"C:\Users\TQC User\Desktop\BECs2\{filename}.mp4"
+    #     fig, ax = plt.subplots() 
+    #     data = plt.imshow(np.abs(self.snaps[0])**2, extent = [-self.winL/2, self.winL/2, -self.winL/2, self.winL/2], cmap = plt.cm.hot, origin = 'lower')
+    #     plt.colorbar() 
+    #     L = self.L
+
+    #     # avi_traj1 = antiv_traj_arr[0] # the trajecory of the ith antivortex 
+    #     # v1 = plt.scatter(avi_traj1[0][0]+0.5-L/2, avi_traj1[0][1]+0.5-L/2, alpha = 0.3, s = 20, color = 'blue')
+
+    #     # avi_traj2 = antiv_traj_arr[1] # the trajecory of the ith antivortex 
+    #     # v2 = plt.scatter(avi_traj2[0][0]+0.5-L/2, avi_traj2[0][1]+0.5-L/2, alpha = 0.3, s = 20, color = 'blue')
 
 
-        # try storing in an array 
-        vort_arr = [] 
+    #     # try storing in an array 
+    #     # vort_arr = [] 
         
-        for i in range(len(antiv_traj_arr)): 
-            avi_traj = antiv_traj_arr[i] 
-            v = plt.scatter(avi_traj[0][0]+0.5-L/2, avi_traj[0][1]+0.5-L/2, alpha = 0.3, s = 20, color = 'blue')
-            vort_arr.append(v) 
-        ### 
-        # v1 = vort_arr[0]
-        # v2 = vort_arr[1]
+    #     # for i in range(len(antiv_traj_arr)): 
+    #     #     avi_traj = antiv_traj_arr[i] 
+    #     #     v = plt.scatter(avi_traj[0][0]+0.5-L/2, avi_traj[0][1]+0.5-L/2, alpha = 0.3, s = 20, color = 'blue')
+    #     #     vort_arr.append(v) 
+    #     v1 = plt.scatter(vortex1_traj[0][1]+0.5-L/2, vortex1_traj[0][2]+0.5-L/2, alpha = 0.3, s = 20, color = 'blue')
+    #     v2 = plt.scatter(vortex2_traj[0][1]+0.5-L/2, vortex2_traj[0][2]+0.5-L/2, alpha = 0.3, s = 20, color = 'blue')
 
 
-        time_text = ax.text(0.05, 0.95,'',horizontalalignment='left',verticalalignment='top', transform=ax.transAxes,  bbox=dict(facecolor='red', alpha=0.5))
-        time_text.set_text('time = 0')
+    #     time_text = ax.text(0.05, 0.95,'',horizontalalignment='left',verticalalignment='top', transform=ax.transAxes,  bbox=dict(facecolor='red', alpha=0.5))
+    #     time_text.set_text('time = 0')
 
-        plt.xlabel("x", fontsize = 16)
-        plt.ylabel('y', fontsize = 16)
-        plt.title(f'Animation for L={L}')
+    #     plt.xlabel("x", fontsize = 16)
+    #     plt.ylabel('y', fontsize = 16)
+    #     plt.title(f'Animation for L={L}')
 
-        def animate(i): 
-            data.set_data(np.abs(self.snaps[i])**2)
-            # loop over the existing points 
-            #print(vort_arr[0])
-            #v1.set_offsets([antiv_traj_arr[0][i][0]+0.5-L/2, antiv_traj_arr[0][i][1]+0.5-L/2])
-            #v2.set_offsets([antiv_traj_arr[1][i][0]+0.5-L/2, antiv_traj_arr[1][i][1]+0.5-L/2])
+    #     def animate(i): 
+    #         data.set_data(np.abs(self.snaps[i])**2)
 
-            for j in range(len(vort_arr)): 
-                vort_arr[j].set_offsets([antiv_traj_arr[j][i][0]+0.5-L/2, antiv_traj_arr[j][i][1]+0.5-L/2])
+    #         v1.set_offsets([vortex1_traj[i][1]+0.5-L/2, vortex1_traj[i][2]+0.5-L/2])
+    #         v2.set_offsets([vortex2_traj[i][1]+0.5-L/2, vortex2_traj[i][1]+0.5-L/2])
+
+    #         # for j in range(len(vort_arr)): 
+    #         #     vort_arr[j].set_offsets([antiv_traj_arr[j][i][0]+0.5-L/2, antiv_traj_arr[j][i][1]+0.5-L/2])
     
-            time_text.set_text('time = %.1d' % time_tracking[i]) # find an array that tracks the time or define one based on dt and the number of points 
-            #return data, time_text
+    #         time_text.set_text('time = %.1d' % time_tracking[i]) # find an array that tracks the time or define one based on dt and the number of points 
+    #         #return data, time_text
 
-            #vort_arr = [v1,v2]
-            return data, time_text, *vort_arr
-        anim = animation.FuncAnimation(fig, animate, frames = len(self.snaps), blit = True)
-        anim.save(path)
-        plt.show() 
+    #         vort_arr = [v1,v2]
+    #         return data, time_text, *vort_arr
+    #     anim = animation.FuncAnimation(fig, animate, frames = len(self.snaps), blit = True)
+    #     anim.save(path)
+    #    # plt.show() 
 
-        return anim 
+    #     return anim 
     
         
     def animatepsi2d_vortex(self, filename):

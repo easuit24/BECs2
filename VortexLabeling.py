@@ -8,14 +8,17 @@ from classicalfield_orig import FiniteTempGPE as gpe
 
 class VortexTracker(): 
 
-    def __init__(self, psi_snaps, L, dx, border_threshold = 4, plot = True): 
+    def __init__(self, psi_snaps, L, dx, border_threshold = 4, plot = True, animFileName = 'default'): 
         self.psi_snaps = psi_snaps
         self.L = L 
         self.dx = dx 
         self.border_threshold = border_threshold 
+        self.animFileName = animFileName
         self.circ_frames = np.zeros((len(self.psi_snaps), len(self.psi_snaps[0])//2, len(self.psi_snaps[0])//2))
         self.plot = plot 
         self.main()
+        self.animatepsi2_vortices(animFileName)
+        self.generalAnimation(animFileName, self.circ_frames)
 
     def detectVortices(self, psi):
             # extract the inner part of the box
@@ -199,82 +202,117 @@ class VortexTracker():
         plt.grid(True)
         plt.show()
 
-    # also allow for plotting the tracking on top of the circulation 
-    # def generalAnimation(self, filename, dataset, tracks, dt, L, periodic = False): 
-    #     time_tracking = np.arange(0, len(dataset))*250*dt
-    #     if filename != None: 
-    #             path = fr"C:\Users\TQC User\Desktop\BECs2\{filename}.mp4"
-    #     fig, ax = plt.subplots() 
-    #     if not periodic: 
-    #         data = plt.imshow(dataset[0],  extent = [-L/2, L/2, -L/2, L/2], origin = 'lower')
-    #     else: 
-    #         data = plt.imshow(dataset[0], extent = [-L/2, L/2, -L/2, L/2], cmap = 'twilight', origin = 'lower')
-    #     plt.colorbar() 
-    #     plt.clim(-2*np.pi, 2*np.pi)
+
+    def animatepsi2_vortices(self, filename): 
+
+        vortex1_traj = self.vortex1
+        vortex2_traj = self.vortex2 
 
 
-    #     # avi_traj1 = antiv_traj_arr[0] # the trajecory of the ith antivortex 
-    #     # v1 = plt.scatter(avi_traj1[0][0]+0.5-L/2, avi_traj1[0][1]+0.5-L/2, alpha = 0.3, s = 20, color = 'blue')
+        ## TODO: Fix this to add time via a dt input somewhere 
+        #time_tracking = np.arange(0, len(self.psi_snaps))*250*
+        if filename != None: 
+                path = fr"C:\Users\TQC User\Desktop\BECs2\{filename}.mp4"
+        fig, ax = plt.subplots() 
+        data = plt.imshow(np.abs(self.psi_snaps[0])**2, extent = [-self.L, self.L, -self.L, self.L], cmap = plt.cm.hot, origin = 'lower')
+        plt.colorbar() 
+        L = self.L
 
-    #     # avi_traj2 = antiv_traj_arr[1] # the trajecory of the ith antivortex 
-    #     # v2 = plt.scatter(avi_traj2[0][0]+0.5-L/2, avi_traj2[0][1]+0.5-L/2, alpha = 0.3, s = 20, color = 'blue')
+        # avi_traj1 = antiv_traj_arr[0] # the trajecory of the ith antivortex 
+        # v1 = plt.scatter(avi_traj1[0][0]+0.5-L/2, avi_traj1[0][1]+0.5-L/2, alpha = 0.3, s = 20, color = 'blue')
+
+        # avi_traj2 = antiv_traj_arr[1] # the trajecory of the ith antivortex 
+        # v2 = plt.scatter(avi_traj2[0][0]+0.5-L/2, avi_traj2[0][1]+0.5-L/2, alpha = 0.3, s = 20, color = 'blue')
 
 
-    #     # try storing in an array 
-    # #     vort_arr = [] 
+        # try storing in an array 
+        # vort_arr = [] 
         
-    # #     for i in range(len(antiv_traj_arr)): 
-    # #          avi_traj = antiv_traj_arr[i] 
-    # #          v = plt.scatter(avi_traj[0][0]+0.5-L/2, avi_traj[0][1]+0.5-L/2, alpha = 0.3, s = 20, color = 'blue')
-    # #          vort_arr.append(v) 
-    #     ### 
-    #     # v1 = vort_arr[0]
-    #     # v2 = vort_arr[1]
+        # for i in range(len(antiv_traj_arr)): 
+        #     avi_traj = antiv_traj_arr[i] 
+        #     v = plt.scatter(avi_traj[0][0]+0.5-L/2, avi_traj[0][1]+0.5-L/2, alpha = 0.3, s = 20, color = 'blue')
+        #     vort_arr.append(v) 
+        v1 = plt.scatter(vortex1_traj[0][1]+0.5-L/2, vortex1_traj[0][2]+0.5-L/2, alpha = 0.3, s = 20, color = 'blue')
+        v2 = plt.scatter(vortex2_traj[0][1]+0.5-L/2, vortex2_traj[0][2]+0.5-L/2, alpha = 0.3, s = 20, color = 'blue')
 
 
-    #     ###
-    #     #plt.imshow(circ_frames[time], origin = 'lower', extent = [-g.L/2, g.L/2, -g.L/2, g.L/2])
-    #     vort_arr = [] 
-    #     for i in range(len(tracks)): 
-    #         for j in range(len(tracks[i])): 
-    #             if tracks[i][j][0] == 0: 
-    #                 v = plt.scatter(tracks[i][j][1]-L/2, tracks[i][j][2]-L/2, alpha = 0.2, color = 'red')
-    #                 vort_arr.append(v) 
-    #                 plt.text(tracks[i][j][1]-L/2, tracks[i][j][2]-L/2, i)
-    #     ### 
+        time_text = ax.text(0.05, 0.95,'',horizontalalignment='left',verticalalignment='top', transform=ax.transAxes,  bbox=dict(facecolor='red', alpha=0.5))
+        time_text.set_text('time = 0')
 
+        plt.xlabel("x", fontsize = 16)
+        plt.ylabel('y', fontsize = 16)
+        plt.title(f'Animation for L={L}')
 
-    #     time_text = ax.text(0.05, 0.95,'',horizontalalignment='left',verticalalignment='top', transform=ax.transAxes,  bbox=dict(facecolor='red', alpha=0.5))
-    #     time_text.set_text('time = 0')
+        def animate(i): 
+            data.set_data(np.abs(self.psi_snaps[i])**2)
 
-    #     plt.xlabel("x", fontsize = 16)
-    #     plt.ylabel('y', fontsize = 16)
-    #     plt.title(f'Animation for L={L}')
+            v1.set_offsets([vortex1_traj[i][1]+0.5-L/2, vortex1_traj[i][2]+0.5-L/2])
+            v2.set_offsets([vortex2_traj[i][1]+0.5-L/2, vortex2_traj[i][2]+0.5-L/2])
 
-    #     def animate(i): 
-    #         data.set_data(dataset[i])
-
-    #         for j in range(len(tracks)):
-    #             for k in range(len(tracks[i])): 
-    #                 if tracks[j][k][0] == i: 
-    #                     plt.scatter(tracks[j][k][1]-L/2, tracks[j][k][2]-L/2, alpha = 0.2, color = 'red')
-    #                     plt.text(tracks[j][k][1]-L/2, tracks[j][k][2]-L/2, j)
-    #     #    for j in range(len(vort_arr)): 
-    #     #         vort_arr[j].set_offsets([antiv_traj_arr[j][i][0]+0.5-L/2, antiv_traj_arr[j][i][1]+0.5-L/2])
+            # for j in range(len(vort_arr)): 
+            #     vort_arr[j].set_offsets([antiv_traj_arr[j][i][0]+0.5-L/2, antiv_traj_arr[j][i][1]+0.5-L/2])
     
-    #         time_text.set_text('time = %.1d' % time_tracking[i]) # find an array that tracks the time or define one based on dt and the number of points 
-    #         #return data, time_text
+            #time_text.set_text('time = %.1d' % time_tracking[i]) # find an array that tracks the time or define one based on dt and the number of points 
+            #return data, time_text
 
-    #         #vort_arr = [v1,v2]
-    #         return data, time_text
-    #     anim = animation.FuncAnimation(fig, animate, frames = len(dataset), blit = True)
-    #     anim.save(path)
+            vort_arr = [v1,v2]
+            #return data, time_text, *vort_arr
+            return data, *vort_arr
+        anim = animation.FuncAnimation(fig, animate, frames = len(self.psi_snaps), blit = True)
+        anim.save(path)
+        print(path)
+        #plt.show() 
+
+        return anim
+
+    # animate the circulation
+    def generalAnimation(self, filename, dataset, periodic = False): 
+        #time_tracking = np.arange(0, len(dataset))*250*g.gpeobj.dt
+        if filename != None: 
+                path = fr"C:\Users\TQC User\Desktop\BECs2\{filename}_circ.mp4"
+        fig, ax = plt.subplots() 
+        if not periodic: 
+            data = plt.imshow(dataset[0],  extent = [-self.L/2, self.L/2, -self.L/2, self.L/2], origin = 'lower')
+        else: 
+            data = plt.imshow(dataset[0], extent = [-self.L/2, self.L/2, -self.L/2, self.L/2], cmap = 'twilight', origin = 'lower')
+        plt.colorbar() 
+        plt.clim(-2*np.pi, 2*np.pi)
+
         
-    #     plt.show() 
+        L = self.L
+        vortex1_traj = self.vortex1
+        vortex2_traj = self.vortex2 
+        v1 = plt.scatter(vortex1_traj[0][1]-L/2, vortex1_traj[0][2]-L/2, alpha = 0.3, s = 20, color = 'blue')
+        v2 = plt.scatter(vortex2_traj[0][1]-L/2, vortex2_traj[0][2]-L/2, alpha = 0.3, s = 20, color = 'blue')
+        time_text = ax.text(0.05, 0.95,'',horizontalalignment='left',verticalalignment='top', transform=ax.transAxes,  bbox=dict(facecolor='red', alpha=0.5))
+        time_text.set_text('time = 0')
 
-    #     return anim
+        plt.xlabel("x", fontsize = 16)
+        plt.ylabel('y', fontsize = 16)
+        plt.title(f'Animation for L={L}')
+
+        def animate(i): 
+            data.set_data(dataset[i])
 
 
+        #    for j in range(len(vort_arr)): 
+        #         vort_arr[j].set_offsets([antiv_traj_arr[j][i][0]+0.5-L/2, antiv_traj_arr[j][i][1]+0.5-L/2])
+    
+            #time_text.set_text('time = %.1d' % time_tracking[i]) # find an array that tracks the time or define one based on dt and the number of points 
+            #return data, time_text
+
+            #vort_arr = [v1,v2]
+
+            v1.set_offsets([vortex1_traj[i][1]+0.5-L/2, vortex1_traj[i][2]+0.5-L/2])
+            v2.set_offsets([vortex2_traj[i][1]+0.5-L/2, vortex2_traj[i][2]+0.5-L/2])
+            vort_arr = [v1, v2]
+            return data, *vort_arr
+        anim = animation.FuncAnimation(fig, animate, frames = len(dataset), blit = False)
+        anim.save(path)
+        
+        #plt.show() 
+
+        return anim 
 
     def main(self): 
         vort = [] 
@@ -287,12 +325,15 @@ class VortexTracker():
             self.circ_frames[i] = detection[2] 
 
         tracks = self.track_vortices_across_frames(avort)
-
+        self.tracks = tracks 
 
         # Sort: Find the two IDs that correspond to original pair 
         ids = sorted(tracks, key=lambda k: len(tracks[k]), reverse=True)[:2] # sort by the length of the tracks
         track1 = tracks[ids[0]]
         track2 = tracks[ids[1]]
+
+        self.vortex1 = track1
+        self.vortex2 = track2
 
         # Compute and plot distance and angles 
         self.distances, self.angles = self.compute_distance_between_tracks(track1, track2)
@@ -333,7 +374,7 @@ class CompareDistances():
                     g = gpe(npoints = 2**6, numImagSteps = 2000, numRealSteps = self.numRealSteps, dtcoef = 0.0005, boxthickness = 0.4, Nsamples = 1, runAnim = True, animFileName=self.animName, Tfact = temp, dst = False, vortex = True)
                 else: 
                     g = gpe(npoints = 2**6, numImagSteps = 2000, numRealSteps = self.numRealSteps, dtcoef = 0.0005, boxthickness = 0.4, Nsamples = 1, runAnim = False, Tfact = temp, dst = False, vortex = True)
-                v = VortexTracker(g.snaps, g.L, g.dx, plot = False) 
+                v = VortexTracker(g.snaps, g.L, g.dx, plot = False, animFileName = self.animName) 
                 times,dist = zip(*v.distances) 
                 times,angles = zip(*v.angles) 
                 if len(dist) < len(avg_dist_t): 
