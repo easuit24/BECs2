@@ -110,7 +110,7 @@ class VortexTracker():
         return tracks
     
 
-    def track_vortices_across_frames(self, frames, initial_locs = [(0,0), (3,0)], max_dist=5):
+    def track_vortices_across_frames(self, frames, initial_locs = [(0,0), (3,0)], max_dist=10):
         """
         frames: list of lists of (x, y) tuples
         Returns: dict {vortex_id: [(t, x, y), ...]}
@@ -245,9 +245,14 @@ class VortexTracker():
 
         def animate(i): 
             data.set_data(np.abs(self.psi_snaps[i])**2)
-
-            v1.set_offsets([vortex1_traj[i][1]+0.5-L/2, vortex1_traj[i][2]+0.5-L/2])
-            v2.set_offsets([vortex2_traj[i][1]+0.5-L/2, vortex2_traj[i][2]+0.5-L/2])
+            if i < len(vortex1_traj): 
+                v1.set_offsets([vortex1_traj[i][1]+0.5-L/2, vortex1_traj[i][2]+0.5-L/2])
+            else: 
+                v1.set_offsets([np.nan, np.nan])
+            if i < len(vortex2_traj): 
+                v2.set_offsets([vortex2_traj[i][1]+0.5-L/2, vortex2_traj[i][2]+0.5-L/2])
+            else: 
+                v2.set_offsets([np.nan, np.nan])
 
             # for j in range(len(vort_arr)): 
             #     vort_arr[j].set_offsets([antiv_traj_arr[j][i][0]+0.5-L/2, antiv_traj_arr[j][i][1]+0.5-L/2])
@@ -301,10 +306,17 @@ class VortexTracker():
             #time_text.set_text('time = %.1d' % time_tracking[i]) # find an array that tracks the time or define one based on dt and the number of points 
             #return data, time_text
 
-            #vort_arr = [v1,v2]
+            if i < len(vortex1_traj): 
+                v1.set_offsets([vortex1_traj[i][1]+0.5-L/2, vortex1_traj[i][2]+0.5-L/2])
+            else: 
+                v1.set_offsets([np.nan, np.nan])
+            if i < len(vortex2_traj): 
+                v2.set_offsets([vortex2_traj[i][1]+0.5-L/2, vortex2_traj[i][2]+0.5-L/2])
+            else: 
+                v2.set_offsets([np.nan, np.nan])
 
-            v1.set_offsets([vortex1_traj[i][1]+0.5-L/2, vortex1_traj[i][2]+0.5-L/2])
-            v2.set_offsets([vortex2_traj[i][1]+0.5-L/2, vortex2_traj[i][2]+0.5-L/2])
+            #v1.set_offsets([vortex1_traj[i][1]+0.5-L/2, vortex1_traj[i][2]+0.5-L/2])
+            #v2.set_offsets([vortex2_traj[i][1]+0.5-L/2, vortex2_traj[i][2]+0.5-L/2])
             vort_arr = [v1, v2]
             return data, *vort_arr
         anim = animation.FuncAnimation(fig, animate, frames = len(dataset), blit = False)
