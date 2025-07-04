@@ -157,13 +157,14 @@ class VortexTracker():
                     tracks[vortex_id].append((t+1, x, y))
                     new_prev_positions[vortex_id] = (x, y)
                     used_indices.add(j)
-                    
+
                 # for if the coordinate goes to the other vortex in the pair: go to the next nearest coordinate 
-                elif j in used_indices: 
+                elif row[j] < max_dist and j in used_indices: 
+                    current_coords_subset = np.delete(current_coords.copy(), j) 
                     row_subset = row.copy() 
-                    new_min_ind = np.argmin(row_subset.delete(j)) 
+                    new_min_ind = np.argmin(np.delete(row_subset, j)) 
                     vortex_id = prev_ids[i] 
-                    x,y = current_coords[new_min_ind]
+                    x,y = current_coords_subset[new_min_ind] # must also modify the distance matrix because now things are shifted...
                     tracks[vortex_id].append((t+1,x,y)) 
                     new_prev_positions[vortex_id] = (x,y) 
                     used_indices.add(new_min_ind)
