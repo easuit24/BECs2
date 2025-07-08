@@ -164,6 +164,8 @@ class VortexTracker():
                     row_subset = row.copy() 
                     new_min_ind = np.argmin(np.delete(row_subset, j)) 
                     vortex_id = prev_ids[i] 
+                    print("Current Coords: ", current_coords) 
+                    print("Current Coords Subset: ", current_coords_subset, axis = 0)
                     x,y = current_coords_subset[new_min_ind] # must also modify the distance matrix because now things are shifted...
                     tracks[vortex_id].append((t+1,x,y)) 
                     new_prev_positions[vortex_id] = (x,y) 
