@@ -347,7 +347,8 @@ class FiniteTempGPE():
             norm = np.sum(np.abs(psinew)**2) * self.dx**self.dim
             dynpsi = np.sqrt(self.gpeobj.Natoms)*psinew/np.sqrt(norm) 
                 
-            if (i%250 == 0):
+            #if (i%250 == 0):
+            if (i%1000 == 0):
                 snapshots.append(dynpsi)
                 self.time_tracking.append(self.gpeobj.dt * i)
 
