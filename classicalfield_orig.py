@@ -323,7 +323,7 @@ class FiniteTempGPE():
         
         '''
         kinU = np.exp( -(1.0j )*(self.gpeobj.k2)*self.gpeobj.dt)
-        kinU = np.exp( -(1.0j+0.005 )*(self.gpeobj.k2)*self.gpeobj.dt)
+        kinU = np.exp( -(1.0j )*(self.gpeobj.k2)*self.gpeobj.dt)
         
         snapshots = [wf] 
         #dynpsi = wf.copy() 
@@ -337,7 +337,7 @@ class FiniteTempGPE():
 
         for i in range(numSteps): 
             #potU = np.exp(-(1.0j ) *((self.gpeobj.Vbox)+self.gpeobj.g * np.abs(dynpsi)**2-1)*self.gpeobj.dt)
-            potU = np.exp(-(1.0j+0.005 ) *((self.gpeobj.Vbox)+self.gpeobj.g * np.abs(dynpsi)**2-1)*self.gpeobj.dt)
+            potU = np.exp(-(1.0j ) *((self.gpeobj.Vbox)+self.gpeobj.g * np.abs(dynpsi)**2-1)*self.gpeobj.dt)
 
             psiFTold = fft2(dynpsi)
             psiFTnew = psiFTold * kinU 

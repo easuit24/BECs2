@@ -144,8 +144,8 @@ class GPETimeEv():
         shape = np.shape(self.xi[0])
         L = self.L/self.dx 
         # *2.5 seemed to work pretty ok with some flow out of the box
-        height = self.kmax**2/2*3 # July 9: change from 3 -> 5
-        height = self.kmax**2/2*5
+        height = self.kmax**2/2*3 # July 9: change from 3 -> 10
+        height = self.kmax**2/2*15
         thickness = self.thickness 
 
         x = np.linspace(-shape[0]//2, shape[0]//2, shape[0])
