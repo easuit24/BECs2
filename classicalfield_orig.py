@@ -303,6 +303,7 @@ class FiniteTempGPE():
         ksamples = np.zeros((self.Nsamples, len(self.ki[0][0]), len(self.ki[0][0])), dtype = np.complex_)
         psix_arr = np.zeros((self.Nsamples, len(self.ki[0][0]), len(self.ki[0][0])), dtype = np.complex_)
         thermal_wf_samples = np.zeros((self.Nsamples, len(self.ki[0][0]), len(self.ki[0][0])), dtype = np.complex_)
+        self.N_th = np.zeros(self.Nsamples) 
         for i in range(self.Nsamples): 
             ksamples[i] = self.genPsiK()
             psik_sp = coef * (ksamples[i])
@@ -312,6 +313,8 @@ class FiniteTempGPE():
             norm = np.sum(np.abs(thermal_sample)**2 * self.dx**2)
 
             thermal_wf_samples[i] = np.sqrt(self.gpeobj.Natoms/norm)*thermal_sample
+            # find the total number of thermal atoms 
+            self.N_th[i] = np.sum(np.abs(ifft2(thermal_wf_samples[i]))**2)
         average_result = np.mean(np.abs(coef*ksamples)**2, axis = 0, dtype = np.complex_) # average of the noisy k samples 
 
         self.wf_samples = thermal_wf_samples 
@@ -363,6 +366,9 @@ class FiniteTempGPE():
             self.getNoise_dst() 
         else: 
             self.getNoise()
+
+        # TODO: Re-normalize the BEC number of atoms here - ensure the total number of atoms N_total = N_bec + N_th where Natoms = N_total
+
         #self.getNoise()
         #self.snaps = np.array((self.Nsamples, len(self.wf_samples[0]),len(self.wf_samples[0])))
         self.final_psis = np.zeros((self.Nsamples, len(self.wf_samples[0]),len(self.wf_samples[0])), dtype = np.complex64)
@@ -370,7 +376,8 @@ class FiniteTempGPE():
         self.short_wfk = []
         for i in range(len(self.wf_samples)): 
             #if not self.vortex: 
-            
+            self.N_bec = self.gpeobj.Natoms - self.N_th[i] 
+            #TODO: Renormalize based on this value
             res = self.realpropagate(self.wf_samples[i], numSteps) 
 
             self.snaps = res[0] 

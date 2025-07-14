@@ -11,7 +11,7 @@ import os
 
 class GPETimeEv():
  
-    def __init__(self, L = 20, dtcoef = 0.1, npoints = 2**9, dim = 1, winMult = 2, numVort = 10, boxthickness = 2, spawnType = 'pair', tol = 10e-10, Nfactor = 1000, numImagSteps = 2000, numRealSteps = 1000,  antiV = False, dist = 3, runDyn = True, imp = False, impPsi = None): 
+    def __init__(self, L = 20, dtcoef = 0.1, npoints = 2**9, dim = 1, winMult = 2, numVort = 10, boxthickness = 2, spawnType = 'pair', tol = 10e-10, Nfactor = 10000, numImagSteps = 2000, numRealSteps = 1000,  antiV = False, dist = 3, runDyn = True, imp = False, impPsi = None): 
         
         # Simulation parameters 
         self.L = L 
