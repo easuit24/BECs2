@@ -308,8 +308,15 @@ class FiniteTempGPE():
             ksamples[i] = self.genPsiK()
             psik_sp = coef * (ksamples[i])
             psix_arr[i] = ifft2(psik_sp) 
-            thermal_sample = self.gs + psix_arr[i] 
-            thermal_sample[np.abs(self.gs)<0.1] = 0
+            ## Get number of atoms in the BEC 
+            N_bec = self.gpeobj.Natoms - np.sum(np.abs(psix_arr[i])**2) 
+            # Renormalize the BEC number of atoms
+            bec_norm = np.sum(np.abs(self.gs)**2*self.dx**2) 
+            self.bec_wf_renormalized = np.sqrt(N_bec/bec_norm) * self.gs 
+            #thermal_sample = self.gs + psix_arr[i] 
+            thermal_sample = self.bec_wf_renormalized + psix_arr[i]
+            thermal_sample[np.abs(self.gs)<0.1] = 0 # TODO: look into fixing the way that we normalize the BEC - might need to move this line to before normalizing the BEC and just appy
+            # to the noise component before adding to the BEC
             norm = np.sum(np.abs(thermal_sample)**2 * self.dx**2)
 
             thermal_wf_samples[i] = np.sqrt(self.gpeobj.Natoms/norm)*thermal_sample
@@ -325,7 +332,7 @@ class FiniteTempGPE():
         '''
         
         '''
-        kinU = np.exp( -(1.0j )*(self.gpeobj.k2)*self.gpeobj.dt)
+        #kinU = np.exp( -(1.0j )*(self.gpeobj.k2)*self.gpeobj.dt)
         kinU = np.exp( -(1.0j )*(self.gpeobj.k2)*self.gpeobj.dt)
         
         snapshots = [wf] 
@@ -378,7 +385,10 @@ class FiniteTempGPE():
             #if not self.vortex: 
             self.N_bec = self.gpeobj.Natoms - self.N_th[i] 
             #TODO: Renormalize based on this value
+            #norm = np.sum(np.abs(self.wf_samples[i])**2 * self.dx**2)
+            #wf_samples_renormed = np.sqrt(self.N_th[i]/norm)*self.wf_samples[i]
             res = self.realpropagate(self.wf_samples[i], numSteps) 
+            #res = self.realpropagate(wf_samples_renormed, numSteps) 
 
             self.snaps = res[0] 
             self.final_psis[i] = res[1]
